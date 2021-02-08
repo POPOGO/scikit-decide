@@ -4,7 +4,7 @@ from skdecide.builders.scheduling.modes import ModeConsumption, ConstantModeCons
 from skdecide.builders.scheduling.scheduling_domains import MultiModeRCPSP, \
     SchedulingDomain, DeterministicSchedulingDomain, SingleModeRCPSP, SingleMode, \
     SingleModeRCPSP_Stochastic_Durations, MultiModeRCPSP_Stochastic_Durations, \
-    MultiModeMultiSkillRCPSP, SchedulingObjectiveEnum, State, MultiModeMultiSkillRCPSPCalendar, MultiModeRCPSPCalendar, MultiModeRCPSPCalendar_Stochastic_Durations
+    MultiModeMultiSkillRCPSP, SchedulingObjectiveEnum, State, MultiModeMultiSkillRCPSPCalendar, MultiModeRCPSPCalendar, MultiModeRCPSPCalendar_Stochastic_Durations, MultiModeMultiSkillRCPSP_Stochastic_Durations
 
 from skdecide.builders.domain import DeterministicTransitions
 
@@ -285,7 +285,6 @@ def build_n_determinist_from_stochastic(srcpsp: Stochastic_RCPSP, nb_instance: i
     return instances
 
 
-
 class D(MultiModeRCPSPCalendar_Stochastic_Durations):
     pass
 
@@ -447,6 +446,104 @@ class MSRCPSP(D):
         return [SchedulingObjectiveEnum.MAKESPAN]
 
 
+class D(MultiModeMultiSkillRCPSP_Stochastic_Durations):
+    pass
+
+
+class SMSRCPSP(D):
+
+    def __init__(self,
+                 skills_names: List[str] = None,
+                 resource_unit_names: List[str] = None,
+                 resource_type_names: List[str] = None,
+                 resource_skills: Dict[str, Dict[str, Any]]=None,
+                 task_ids: List[int] = None,
+                 tasks_mode: Dict[int, Dict[int, Dict[str, int]]] = None,
+                 successors: Dict[int, List[int]] = None,
+                 max_horizon: int = None,
+                 resource_availability: Dict[str, int] = None,
+                 resource_renewable: Dict[str, bool] = None,
+                 duration_distribution: Dict[int, Dict[int, DiscreteDistribution]] = None):
+        self.skills_set = set(skills_names)
+        self.resource_unit_names = resource_unit_names
+        self.resource_type_names = resource_type_names
+        self.resource_skills = resource_skills
+        self.task_ids = task_ids
+        self.tasks_mode = tasks_mode
+        # transform the "mode_details" dict that we largely used in DO in the good format.
+        self.task_mode_dict = {}
+        self.task_skills_dict = {}
+        self.duration_distribution = duration_distribution
+        self.duration_dict = {}
+        for task in self.tasks_mode:
+            self.task_mode_dict[task] = {}
+            self.task_skills_dict[task] = {}
+            self.duration_dict[task] = {}
+            for mode in self.tasks_mode[task]:
+                self.task_mode_dict[task][mode] = ConstantModeConsumption({})
+                self.task_skills_dict[task][mode] = {}
+                for r in self.tasks_mode[task][mode]:
+                    if r in self.resource_type_names:
+                        self.task_mode_dict[task][mode].mode_details[r] = [self.tasks_mode[task][mode][r]]
+                    if r in self.skills_set:
+                        self.task_skills_dict[task][mode][r] = self.tasks_mode[task][mode][r]
+                self.duration_dict[task][mode] = self.tasks_mode[task][mode]["duration"]
+        self.successors = successors
+        self.max_horizon = max_horizon
+        self.resource_availability = resource_availability
+        self.resource_renewable = resource_renewable
+        self.initialize_domain()
+
+    def _get_resource_units_names(self) -> List[str]:
+        """Return the names (string) of all resource units as a list."""
+        return self.resource_unit_names
+
+    def _get_resource_types_names(self) -> List[str]:
+        return self.resource_type_names
+
+    def _get_resource_type_for_unit(self) -> Dict[str, str]:
+        """Return a dictionary where the key is a resource unit name and the value a resource type name.
+        An empty dictionary can be used if there are no resource unit matching a resource type."""
+        return None
+
+    # def get_max_horizon(self) -> int:
+    #     return self.max_horizon
+
+    def _get_max_horizon(self) -> int:
+        return self.max_horizon
+
+    def _get_tasks_modes(self) -> Dict[int, Dict[int, ModeConsumption]]:
+        return self.task_mode_dict
+
+    def _get_successors(self) -> Dict[int, List[int]]:
+        return self.successors
+
+    def _get_tasks_ids(self) -> Union[Set[int], Dict[int, Any], List[int]]:
+        return self.task_ids
+
+    # def _get_task_duration(self, task: int, mode: Optional[int] = 1, progress_from: Optional[float] = 0.) -> int:
+    #     return self.duration_dict[task][mode]
+
+    def _get_task_duration_distribution(self, task: int, mode: Optional[int] = 1, progress_from: Optional[float] = 0.,
+                                        multivariate_settings: Optional[Dict[str, int]] = None) -> Distribution:
+        return self.duration_distribution[task][mode]
+
+    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+        return self.resource_availability[resource]
+
+    def _get_resource_renewability(self) -> Dict[str, bool]:
+        return self.resource_renewable
+
+    def _get_all_resources_skills(self) -> Dict[str, Dict[str, Any]]:
+        return self.resource_skills
+
+    def _get_all_tasks_skills(self) -> Dict[int, Dict[int, Dict[str, Any]]]:
+        return self.task_skills_dict
+
+    def _get_objectives(self) -> List[int]:
+        return [SchedulingObjectiveEnum.MAKESPAN]
+
+
 class D(MultiModeMultiSkillRCPSPCalendar):
     pass
 
@@ -539,6 +636,74 @@ class MSRCPSPCalendar(D):
 
     def _get_objectives(self) -> List[int]:
         return [SchedulingObjectiveEnum.MAKESPAN]
+
+
+def build_stochastic_from_deterministic_ms(rcpsp: MSRCPSP, task_to_noise: Set[int]=None):
+    if task_to_noise is None:
+        task_to_noise = set(rcpsp.get_tasks_ids())
+    duration_distribution = {}
+    for task_id in rcpsp.get_tasks_ids():
+        duration_distribution[task_id] = {}
+        for mode in rcpsp.get_task_modes(task_id=task_id):
+            duration = rcpsp.get_task_duration(task=task_id, mode=mode)
+            if duration == 0 or task_id not in task_to_noise:
+                distrib = DiscreteDistribution(values=[(duration, 1)])
+            else:
+                n = 10
+                distrib = DiscreteDistribution(values=[(max(1, duration+i), 1/(2*n+1))
+                                                       for i in range(-n, n+1)])
+            duration_distribution[task_id][mode] = distrib
+
+    return SMSRCPSP(skills_names=rcpsp.get_skills_names(),
+                    resource_unit_names = rcpsp.get_resource_units_names(),
+                    resource_type_names=rcpsp.get_resource_types_names(),
+                    resource_skills = rcpsp.get_all_resources_skills(),
+                            task_ids=rcpsp.get_tasks_ids(),
+                            tasks_mode=rcpsp.tasks_mode,  # ressource
+                            duration_distribution=duration_distribution,
+                            successors=rcpsp.successors,
+                            max_horizon=rcpsp.max_horizon*2,
+                            resource_availability=rcpsp.resource_availability,
+                            resource_renewable=rcpsp.resource_renewable)
+
+
+def build_n_determinist_from_stochastic_ms(srcpsp: SMSRCPSP, nb_instance: int):
+    instances = []
+
+    for i in range(nb_instance):
+        modes = srcpsp.get_tasks_modes()
+        modes_for_rcpsp = {task: {mode: {r:
+                                         modes[task][mode].get_resource_need_at_time(r, 0)
+                                         for r in modes[task][mode].get_ressource_names()}
+                           for mode in modes[task]} for task in modes}
+        for t in modes_for_rcpsp:
+            for m in modes_for_rcpsp[t]:
+                duration = srcpsp.sample_task_duration(task=t, mode=m)
+                modes_for_rcpsp[t][m]["duration"] = duration
+
+        resource_availability_dict = {}
+        for r in srcpsp.get_resource_types_names():
+            resource_availability_dict[r] = srcpsp.get_original_quantity_resource(r)
+
+
+        instances += [MSRCPSP(skills_names = srcpsp.get_skills_names(),
+                              resource_unit_names = srcpsp.get_resource_units_names(),
+                              resource_type_names=srcpsp.get_resource_types_names(),
+                              resource_skills=srcpsp.get_all_resources_skills(),
+                             task_ids=srcpsp.get_tasks_ids(),
+                             tasks_mode=modes_for_rcpsp,  # ressource
+                              # tasks_mode=srcpsp.get_tasks_modes(),  # ressource
+
+                              successors=srcpsp.successors,
+                             # max_horizon=srcpsp.max_horizon,
+                             max_horizon=srcpsp.get_max_horizon(),
+                             # resource_availability=srcpsp.resource_availability,
+                             resource_availability=resource_availability_dict,
+                             resource_renewable=srcpsp.get_resource_renewability()
+                      # resource_renewable=srcpsp.resource_renewable
+                             )]
+
+    return instances
 
 
 if __name__ == "__main__":

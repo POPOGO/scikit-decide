@@ -1243,6 +1243,27 @@ class MultiModeMultiSkillRCPSP(DeterministicSchedulingDomain,
     pass
 
 
+class MultiModeMultiSkillRCPSP_Stochastic_Durations(UncertainSchedulingDomain,
+                               MultiMode,
+                               UncertainUnivariateTaskDuration,
+                               DeterministicTaskProgress,
+                               # WithResourceUnits,
+                               # WithResourceTypes,
+                               WithoutPreemptivity,
+                               WithoutPreallocations,
+                               WithoutTimeLag,
+                               WithoutTimeWindow,
+                               # WithResourceSkills, # This change from MultiModeRCPSP
+                               WithoutResourceAvailabilityChange,
+                               WithoutConditionalTasks,
+                               ConstantResourceConsumption,
+                               MixedRenewable,
+                               WithoutModeCosts,
+                               WithoutResourceCosts
+                               ):
+    pass
+
+
 class MultiModeMultiSkillRCPSPCalendar(DeterministicSchedulingDomain,
                                        MultiMode,
                                        DeterministicTaskDuration,

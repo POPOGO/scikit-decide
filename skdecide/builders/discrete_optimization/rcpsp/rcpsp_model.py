@@ -1218,9 +1218,3 @@ class MRCPSP_H_Model(MultiModeRCPSPModel):
                                       rcpsp_modes=modes_corrected)
         objectives = self.evaluate(rcpsp_sol)
         return objectives
-
-
-
-
-
-
