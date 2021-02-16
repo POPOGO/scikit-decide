@@ -41,7 +41,7 @@ def build_do_domain(scheduling_domain: Union[SingleModeRCPSP,
                 for r in modes_details[task][mode].get_ressource_names():
                     mode_details_do[task][mode][r] = modes_details[task][mode].get_resource_need_at_time(r, time=0) # should be constant anyway
                 mode_details_do[task][mode]["duration"] = scheduling_domain.get_task_duration(task=task, mode=mode)
-        return SingleModeRCPSPModel(resources={r: scheduling_domain.get_original_quantity_resource(r)
+        return SingleModeRCPSPModel(resources={r: scheduling_domain.get_fixed_quantity_resource(r)
                                                for r in scheduling_domain.get_resource_types_names()} ,
                                     non_renewable_resources=[r
                                                              for r in scheduling_domain.get_resource_renewability()
@@ -60,7 +60,7 @@ def build_do_domain(scheduling_domain: Union[SingleModeRCPSP,
                 for r in modes_details[task][mode].get_ressource_names():
                     mode_details_do[task][mode][r] = modes_details[task][mode].get_resource_need_at_time(r, time=0) # should be constant anyway
                 mode_details_do[task][mode]["duration"] = scheduling_domain.sample_task_duration(task=task, mode=mode)
-        return SingleModeRCPSPModel(resources={r: scheduling_domain.get_original_quantity_resource(r)
+        return SingleModeRCPSPModel(resources={r: scheduling_domain.get_fixed_quantity_resource(r)
                                                for r in scheduling_domain.get_resource_types_names()} ,
                                     non_renewable_resources=[r
                                                              for r in scheduling_domain.get_resource_renewability()
@@ -79,7 +79,7 @@ def build_do_domain(scheduling_domain: Union[SingleModeRCPSP,
                 for r in modes_details[task][mode].get_ressource_names():
                     mode_details_do[task][mode][r] = modes_details[task][mode].get_resource_need_at_time(r, time=0) # should be constant anyway
                 mode_details_do[task][mode]["duration"] = scheduling_domain.get_task_duration(task=task, mode=mode)
-        return MultiModeRCPSPModel(resources={r: scheduling_domain.get_original_quantity_resource(r)
+        return MultiModeRCPSPModel(resources={r: scheduling_domain.get_fixed_quantity_resource(r)
                                                for r in scheduling_domain.get_resource_types_names()} ,
                                    non_renewable_resources=[r
                                                             for r in scheduling_domain.get_resource_renewability()
@@ -130,7 +130,7 @@ def build_do_domain(scheduling_domain: Union[SingleModeRCPSP,
         employees_dict = {}
         employees = scheduling_domain.get_resource_units_names()
         sorted_employees = sorted(employees)
-        print(sorted_employees)
+        # print(sorted_employees)
         for employee, i in zip(sorted_employees, range(len(sorted_employees))):
             skills = scheduling_domain.get_skills_of_resource(resource=employee)
             skills_details = {r: SkillDetail(skill_value=skills[r],

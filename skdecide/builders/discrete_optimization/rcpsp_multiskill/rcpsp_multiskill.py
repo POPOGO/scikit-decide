@@ -386,6 +386,7 @@ class MS_RCPSPModel(Problem):
         self.mode_details = mode_details
         self.successors = successors
         self.n_jobs_non_dummy = len(self.mode_details.keys()) - 2
+        self.n_jobs = len(self.mode_details.keys())
         self.horizon = horizon
         self.horizon_multiplier = horizon_multiplier
         self.sink_task = sink_task

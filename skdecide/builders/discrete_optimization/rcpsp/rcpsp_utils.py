@@ -364,9 +364,17 @@ def all_diff_start_time(rcpsp_sols: (RCPSPSolution, RCPSPSolution)):
 
 
 def compute_graph_rcpsp(rcpsp_model: RCPSPModel):
+    print('rcpsp_model.mode_details: ', rcpsp_model.mode_details.keys())
+    print('rcpsp_model.n_jobs: ', rcpsp_model.n_jobs)
+    print('range: ', range(1, rcpsp_model.n_jobs + 3))
+
+    # nodes = [(n, {mode: rcpsp_model.mode_details[n][mode]["duration"]
+    #               for mode in rcpsp_model.mode_details[n]})
+    #          for n in range(1, rcpsp_model.n_jobs + 3)]
+
     nodes = [(n, {mode: rcpsp_model.mode_details[n][mode]["duration"]
                   for mode in rcpsp_model.mode_details[n]})
-             for n in range(1, rcpsp_model.n_jobs + 3)]
+             for n in rcpsp_model.mode_details.keys()]
     edges = []
     for n in rcpsp_model.successors:
         for succ in rcpsp_model.successors[n]:

@@ -59,7 +59,7 @@ class MyExampleRCPSPDomain(SingleModeRCPSP):
         all_durations = {1: 0, 2: 5, 3: 6, 4: 4, 5: 0}
         return all_durations[task]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs):
         all_resource_quantities = {'r1': 2, 'r2': 1}
         return all_resource_quantities[resource]
 
@@ -575,6 +575,6 @@ def run_graph_exploration_conditional():
 
 if __name__ == "__main__":
     run_do()
-    run_astar()
+    # run_astar()
     # run_example()
     # run_graph_exploration_conditional()

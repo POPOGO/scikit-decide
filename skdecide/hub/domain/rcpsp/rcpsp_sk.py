@@ -61,7 +61,7 @@ class MRCPSP(D):
     def _get_task_duration(self, task: int, mode: Optional[int] = 1, progress_from: Optional[float] = 0.) -> int:
         return self.duration_dict[task][mode]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         return self.resource_availability[resource]
 
     def _get_resource_types_names(self) -> List[str]:
@@ -129,7 +129,7 @@ class MRCPSPCalendar(D):
     def _get_task_duration(self, task: int, mode: Optional[int] = 1, progress_from: Optional[float] = 0.) -> int:
         return self.duration_dict[task][mode]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         return self.original_resource_availability[resource]
 
     def _get_resource_types_names(self) -> List[str]:
@@ -200,7 +200,7 @@ class Stochastic_RCPSP(MultiModeRCPSP_Stochastic_Durations):
                                         multivariate_settings: Optional[Dict[str, int]]=None) -> Distribution:
         return self.duration_distribution[task][mode]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         return self.resource_availability[resource]
 
     def _get_resource_types_names(self) -> List[str]:
@@ -269,7 +269,7 @@ def build_n_determinist_from_stochastic(srcpsp: Stochastic_RCPSP, nb_instance: i
 
         resource_availability_dict = {}
         for r in srcpsp.get_resource_types_names():
-            resource_availability_dict[r] = srcpsp.get_original_quantity_resource(r)
+            resource_availability_dict[r] = srcpsp.get_fixed_quantity_resource(r)
 
         instances += [MRCPSP(resource_names=srcpsp.get_resource_types_names(),
                              task_ids=srcpsp.get_tasks_ids(),
@@ -347,7 +347,7 @@ class SMRCPSPCalendar(D):
     def _get_task_duration(self, task: int, mode: Optional[int] = 1, progress_from: Optional[float] = 0.) -> int:
         return self.duration_dict[task][mode]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         # return self.resource_availability[resource]
         return self.original_resource_availability[resource]
 
@@ -430,7 +430,7 @@ class MSRCPSP(D):
     def _get_task_duration(self, task: int, mode: Optional[int] = 1, progress_from: Optional[float] = 0.) -> int:
         return self.duration_dict[task][mode]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         return self.resource_availability[resource]
 
     def _get_resource_renewability(self) -> Dict[str, bool]:
@@ -528,7 +528,7 @@ class SMSRCPSP(D):
                                         multivariate_settings: Optional[Dict[str, int]] = None) -> Distribution:
         return self.duration_distribution[task][mode]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         return self.resource_availability[resource]
 
     def _get_resource_renewability(self) -> Dict[str, bool]:
@@ -681,9 +681,9 @@ def build_n_determinist_from_stochastic_ms(srcpsp: SMSRCPSP, nb_instance: int):
                 duration = srcpsp.sample_task_duration(task=t, mode=m)
                 modes_for_rcpsp[t][m]["duration"] = duration
 
-        resource_availability_dict = {}
-        for r in srcpsp.get_resource_types_names():
-            resource_availability_dict[r] = srcpsp.get_original_quantity_resource(r)
+        # resource_availability_dict = {}
+        # for r in srcpsp.get_resource_types_names():
+        #     resource_availability_dict[r] = srcpsp.get_original_quantity_resource(r)
 
 
         instances += [MSRCPSP(skills_names = srcpsp.get_skills_names(),
@@ -697,8 +697,8 @@ def build_n_determinist_from_stochastic_ms(srcpsp: SMSRCPSP, nb_instance: int):
                               successors=srcpsp.successors,
                              # max_horizon=srcpsp.max_horizon,
                              max_horizon=srcpsp.get_max_horizon(),
-                             # resource_availability=srcpsp.resource_availability,
-                             resource_availability=resource_availability_dict,
+                             resource_availability=srcpsp.resource_availability,
+                             # resource_availability=resource_availability_dict,
                              resource_renewable=srcpsp.get_resource_renewability()
                       # resource_renewable=srcpsp.resource_renewable
                              )]

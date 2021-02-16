@@ -1,8 +1,29 @@
 from copy import deepcopy
 from enum import Enum
-from typing import Set, Dict, List, Any, Optional, Union
+from typing import Set, Dict, List, Any, Optional, Union, Tuple
 
 from skdecide.builders.scheduling.task import Task
+
+
+class SchedulingEventEnum(Enum):
+    RESOURCE_AVAILABILITY = 0
+    TASK_START = 1
+    TASK_END = 2
+    TASK_PAUSED = 3
+    TASK_RESUME = 4
+
+
+class SchedulingEvent:
+    t: int
+    event_type: SchedulingEventEnum
+    resource_delta: int
+    resource: str
+
+    def __init__(self, t: int, event_type: SchedulingEventEnum, resource_delta: Optional[int] = None, resource: Optional[str] = None):
+        self.t = t
+        self.event_type = event_type
+        self.resource_delta = resource_delta
+        self.resource = resource
 
 
 class SchedulingActionEnum(Enum):
@@ -67,6 +88,7 @@ class State:
     resource_used_for_task = Dict[int, Dict[str, int]]
     tasks_details: Dict[int, Task]  # Use to store task stats, resource used etc... for post-processing purposes
     _current_conditions: Set
+    events: List[Tuple[int, SchedulingEvent]]
 
     # TODO : put the attributes in the __init__ ?!
     def __init__(self, task_ids: List[int], tasks_available: Set[int]=None):
@@ -94,6 +116,7 @@ class State:
         for task_id in task_ids:
             self.tasks_details[task_id] = Task(task_id)
         self._current_conditions = set()
+        self.events = []
 
     def copy(self):
         s = State(task_ids=self.task_ids)
@@ -110,6 +133,7 @@ class State:
         s.resource_used_for_task = deepcopy(self.resource_used_for_task)
         s.tasks_details = deepcopy(self.tasks_details)
         s._current_conditions = deepcopy(self._current_conditions)
+        s.events = deepcopy(self.events)
         return s
 
     def __str__(self):
@@ -131,6 +155,25 @@ class State:
     def __eq__(self, other):
         return self.__hash__() == other.__hash__()
 
+    def get_events_at_current_time(self):
+        events = [ev for ev in self.events if ev[0] == self.t]
+        return events
+
+    def get_last_resource_event(self, resource: str):
+        events = sorted([ev for ev in self.events if (ev[0] < self.t) and (ev[1].event_type == SchedulingEventEnum.RESOURCE_AVAILABILITY) and (ev[1].resource == resource)], key=lambda a: a[0])
+        if len(events) > 0:
+            event = events[-1][1]
+        else:
+            event = None
+        return event
+
+    def get_next_resource_event(self, resource: str):
+        events = sorted([ev for ev in self.events if (ev[0] >= self.t) and (ev[1].event_type == SchedulingEventEnum.RESOURCE_AVAILABILITY) and (ev[1].resource == resource)], key=lambda a: a[0])
+        if len(events) > 0:
+            event = events[0][1]
+        else:
+            event = None
+        return event
 
 # class SamplableAction:
 #     """
@@ -203,3 +246,4 @@ class SchedulingAction:
 
     def __repr__(self):
         return str(self)
+

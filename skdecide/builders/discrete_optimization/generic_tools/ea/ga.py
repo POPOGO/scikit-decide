@@ -60,7 +60,8 @@ class Ga():
                  mut_rate: float = None,
                  crossover_rate: float = None,
                  tournament_size: float = None,
-                 deap_verbose: bool = None
+                 deap_verbose: bool = None,
+                 initial_population: List[List] = None
                  ):
 
 
@@ -108,6 +109,8 @@ class Ga():
             self._deap_verbose = deap_verbose
         else:
             self._deap_verbose = True
+
+        self.initial_population = initial_population
 
         # set encoding
         register_solution: EncodingRegister = problem.get_attribute_register()
@@ -319,9 +322,20 @@ class Ga():
             val = sum([objective_values[self._objectives[i]] * self._objective_weights[i] for i in range(len(self._objectives))])
         return (val,)
 
+
+    def generate_custom_population(self):
+        pop = []
+        for ind in self.initial_population:
+            newind = self._toolbox.individual()
+            print('newind: ', newind)
+
+
     def solve(self, **kwargs):
-        # Initialise the population (here at random)
-        population = self._toolbox.population()
+        if self.initial_population is None:
+            # Initialise the population (here at random)
+            population = self._toolbox.population()
+        else:
+            population = self.generate_custom_population()
 
         fits = self._toolbox.map(self._toolbox.evaluate, population)
         for fit, ind in zip(fits, population):

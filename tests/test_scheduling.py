@@ -75,7 +75,7 @@ class ToyRCPSPDomain(SingleModeRCPSP):
         all_durations = {1: 0, 2: 5, 3: 6, 4: 4, 5: 0}
         return all_durations[task]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         all_resource_quantities = {'r1': 2, 'r2': 1}
         return all_resource_quantities[resource]
 
@@ -131,7 +131,7 @@ class ToyMRCPSPDomain_WithCost(MultiModeRCPSPWithCost):
         all_durations = {1: 0, 2: 5, 3: 6, 4: 4, 5: 0}
         return all_durations[task]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         all_resource_quantities = {'r1': 2, 'r2': 1}
         return all_resource_quantities[resource]
 
@@ -143,7 +143,7 @@ class ToyMS_RCPSPDomain(MultiModeMultiSkillRCPSP):
     def _get_resource_units_names(self) -> List[str]:
         return ["employee-1", "employee-2", "employee-3"]
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         all_resource_quantities = {'r1': 2, 'r2': 1, "employee-1": 1, "employee-2": 1, "employee-3": 1}
         return all_resource_quantities[resource]
 
@@ -246,7 +246,7 @@ class ToySRCPSPDomain(SingleModeRCPSP_Stochastic_Durations):
     def _get_resource_types_names(self) -> List[str]:
         return ['r1', 'r2']
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         all_resource_quantities = {'r1': 2, 'r2': 1}
         return all_resource_quantities[resource]
 
@@ -326,7 +326,7 @@ class ToyCondSRCPSPDomain(SingleModeRCPSP_Stochastic_Durations_WithConditionalTa
     def _get_resource_types_names(self) -> List[str]:
         return ['r1', 'r2']
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         all_resource_quantities = {'r1': 2, 'r2': 1}
         return all_resource_quantities[resource]
 
@@ -386,7 +386,7 @@ class ToySimulatedCondSRCPSPDomain(SingleModeRCPSP_Simulated_Stochastic_Duration
     def _get_resource_types_names(self) -> List[str]:
         return ['r1', 'r2']
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         all_resource_quantities = {'r1': 2, 'r2': 1}
         return all_resource_quantities[resource]
 

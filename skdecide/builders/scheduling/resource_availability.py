@@ -7,69 +7,119 @@ __all__ = ['UncertainResourceAvailabilityChanges', 'DeterministicResourceAvailab
 
 
 class UncertainResourceAvailabilityChanges:
-    """A domain must inherit this class if the availability of its resource vary in an uncertain way over time."""
+    """A domain must inherit this class if the availability of its resource vary in an uncertain way over time.
+    This class enables the definition of resource change events."""
 
-    def _sample_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
-        """Sample an amount of resource availability (int) for the given resource
-         (either resource type or resource unit) at the given time. This number should be the sum of the number of
-         resource available at time t and the number of resource of this type consumed so far)."""
+    def _get_original_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
+        """Return the resource availability (int) for the given resource
+        (either resource type or resource unit) at the given time."""
         raise NotImplementedError
 
-    def sample_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
-        """Sample an amount of resource availability (int) for the given resource
-         (either resource type or resource unit) at the given time. This number should be the sum of the number of
-         resource available at time t and the number of resource of this type consumed so far)."""
-        return self._sample_quantity_resource(resource=resource, time=time, **kwargs)
+    def get_original_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
+        """Return the resource availability (int) for the given resource
+        (either resource type or resource unit) at the given time."""
+        return self._get_original_quantity_resource(resource, time, **kwargs)
 
-    def check_unique_resource_names(self) -> bool:  # TODO: How to enforce a call to this function when initialising a domain ?
-        """Return True if there are no duplicates in resource names across both resource types
-        and resource units name lists."""
-        list1 = self.get_resource_types_names() + self.get_resource_units_names()
-        list2 = list(set(list1))
-        check_1 = len(list1) == len(list2)  # no duplicated names
-        check_2 = len(list2) > 0  # at least one resource
-        return check_1 and check_2
+    def _get_next_resource_change_time_distribution(self, resource: str, currenttime: int, previousresourcehangetime: Optional[int]):
+        """ Return a Distribution defining the probability to experience a resource availability event at any time step.
+        If a time step is not in the distribution, assume its probability to experience an event is 0.
+        The current time step and the time step of the previous resource event given as input can be used to define this distribution.
+        E.g. A distribution for 4 time step (from 13 to 16) can be defined as:
+            Distribution([(13, 0.4), (14, 0.3), (15, 0.2), (16, 0.1)]).
+        """
+        raise NotImplementedError
+
+    def get_next_resource_change_time_distribution(self, resource: str, currenttime: int, previousresourcehangetime: Optional[int] = None):
+        """ Return a Distribution defining the probability to experience a resource availability event at any time step.
+        If a time step is not in the distribution, assume its probability to experience an event is 0.
+        The current time step and the time step of the previous resource event given as input can be used to define this distribution.
+        E.g. A distribution for 4 time step (from 13 to 16) can be defined as:
+            Distribution([(13, 0.4), (14, 0.3), (15, 0.2), (16, 0.1)]).
+        """
+        return self._get_next_resource_change_time_distribution(resource, currenttime, previousresourcehangetime)
+
+    def _get_next_resource_change_delta_distribution(self, resource: str, change_time: int, previous_resource_event: Optional[(int, int)] = None):
+        """ Return a Distribution defining the magnitude of a resource availability change.
+        The time step of the event and the information about the previous event (time and magnitude) can be used to define this distribution.
+        E.g. A distribution for 4 levels of changes can be defined as:
+            Distribution([(-2, 0.1), (-1, 0.4), (1, 0.4), (2, 0.1)]).
+        """
+        raise NotImplementedError
+
+    def get_next_resource_change_delta_distribution(self, resource: str, change_time: int,
+                                                     previous_resource_event: Optional[(int, int)] = None):
+        """ Return a Distribution defining the magnitude of a resource availability change.
+        The time step of the event and the information about the previous event (time and magnitude) can be used to define this distribution.
+        E.g. A distribution for 4 levels of changes can be defined as:
+            Distribution([(-2, 0.1), (-1, 0.4), (1, 0.4), (2, 0.1)]).
+        """
+        return self._get_next_resource_change_delta_distribution(resource, change_time, previous_resource_event)
+
+    def _get_quantity_resource(self, resource: str, time: int, previous_resource_event: Optional[(int, int)] = None, next_resource_event: Optional[(int, int)] = None):
+        """ Return the quantity of resource of a given type available at a given time,
+        potentially considering the previous and next resource change events.
+        """
+        raise NotImplementedError
+
+    def get_quantity_resource(self, resource: str, time: int, previous_resource_event: Optional[(int, int)] = None, next_resource_event: Optional[(int, int)] = None):
+        """ Return the quantity of resource of a given type available at a given time,
+        potentially considering the previous and next resource change events.
+        """
+        return self._get_quantity_resource(resource, time, previous_resource_event, next_resource_event)
 
 
 class DeterministicResourceAvailabilityChanges(UncertainResourceAvailabilityChanges):
     """A domain must inherit this class if the availability of its resource vary in a deterministic way over time."""
 
-    def _get_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
+    def _get_original_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
         """Return the resource availability (int) for the given resource
-         (either resource type or resource unit) at the given time."""
+        (either resource type or resource unit) at the given time."""
         raise NotImplementedError
 
-    def get_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
+    def _get_next_resource_change_time_distribution(self, resource: str, currenttime: int, previousresourcehangetime: Optional[int]):
+        """E.g. Distribution(int, float) """
+        return None
+
+    def _get_next_resource_change_delta_distribution(self, resource: str, change_time: int, previous_resource_event: Optional[(int, int)] = None):
+        """"""
+        return 0
+
+    def _get_quantity_resource(self, resource: str, time: int, previous_resource_event: Optional[(int, int)] = None, next_resource_event: Optional[(int, int)] = None, **kwargs) -> int:
         """Return the resource availability (int) for the given resource
          (either resource type or resource unit) at the given time."""
-        return self._get_quantity_resource(resource=resource, time=time, **kwargs)
+        return self._get_original_quantity_resource(resource=resource, time=time, **kwargs)
 
-    def _sample_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
-        """Sample an amount of resource availability (int) for the given resource
-         (either resource type or resource unit) at the given time. This number should be the sum of the number of
-         resource available at time t and the number of resource of this type consumed so far)."""
-        return self.get_quantity_resource(resource, time, **kwargs)
+    # def _sample_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
+    #     """Sample an amount of resource availability (int) for the given resource
+    #      (either resource type or resource unit) at the given time. This number should be the sum of the number of
+    #      resource available at time t and the number of resource of this type consumed so far)."""
+    #     return self.get_quantity_resource(resource, time, **kwargs)
 
 
 class WithoutResourceAvailabilityChange(DeterministicResourceAvailabilityChanges):
     """A domain must inherit this class if the availability of its resource does not vary over time."""
 
-    def _get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         """Return the resource availability (int) for the given resource (either resource type or resource unit)."""
         raise NotImplementedError
 
-    def get_original_quantity_resource(self, resource: str, **kwargs) -> int:
+    def get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         """Return the resource availability (int) for the given resource (either resource type or resource unit)."""
-        return self._get_original_quantity_resource(resource=resource, **kwargs)
+        return self._get_fixed_quantity_resource(resource=resource, **kwargs)
 
-    def _get_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
+    def _get_original_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
         """Return the resource availability (int) for the given resource
         (either resource type or resource unit) at the given time."""
-        return self.get_original_quantity_resource(resource)
+        return self._get_fixed_quantity_resource(resource)
 
-    def _sample_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
-        """Sample an amount of resource availability (int) for the given resource
-         (either resource type or resource unit) at the given time. This number should be the sum of the number of
-         resource available at time t and the number of resource of this type consumed so far)."""
-        return self.get_original_quantity_resource(resource)
+    # def _get_quantity_resource(self, resource: str, time: int, previous_resource_event: Optional[(int, int)] = None, next_resource_event: Optional[(int, int)] = None, **kwargs) -> int:
+    #     """Sample an amount of resource availability (int) for the given resource
+    #      (either resource type or resource unit) at the given time. This number should be the sum of the number of
+    #      resource available at time t and the number of resource of this type consumed so far)."""
+    #     return self._get_fixed_quantity_resource(resource)
 
+    # def _sample_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
+    #     """Sample an amount of resource availability (int) for the given resource
+    #      (either resource type or resource unit) at the given time. This number should be the sum of the number of
+    #      resource available at time t and the number of resource of this type consumed so far)."""
+    #     return self._get_fixed_quantity_resource(resource)
