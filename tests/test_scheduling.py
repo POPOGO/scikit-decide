@@ -445,6 +445,12 @@ def check_task_duration(domain, states: List[State]):
             if id in states[-1].tasks_complete:  # needed for conditional tasks
                 expected_duration = states[-1].tasks_details[id].sampled_duration
                 actual_duration = states[-1].tasks_details[id].end - states[-1].tasks_details[id].start
+                print('task: ', id)
+                print('actual_duration: ', actual_duration)
+                print('expected_duration: ', expected_duration)
+                print('s: ', states[-1].tasks_details[id].start)
+                print('e: ', states[-1].tasks_details[id].end)
+
                 assert actual_duration == expected_duration, 'duration different than expected for task ' + str(id)
 
 
