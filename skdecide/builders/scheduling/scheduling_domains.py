@@ -622,8 +622,9 @@ class SchedulingDomain(WithPrecedence,
                     next_state.resource_used[res] += resource_to_use[res]
                 next_state.resource_used_for_task[started_task] = resource_to_use
                 next_state.tasks_progress[started_task] = 0.
-
                 states_and_proba += [(next_state, value_duration[1])]
+                new_event = SchedulingEvent((next_state.t + value_duration[0]), SchedulingEventEnum.TASK_END)
+                next_state.events.append(((next_state.t + value_duration[0]), new_event))
 
             return DiscreteDistribution(states_and_proba)
         return DiscreteDistribution([(state, 1)])
@@ -724,26 +725,28 @@ class SchedulingDomain(WithPrecedence,
 
                 # update the resource used / resource availability function on the possible new availability
                 # and consumption of ongoing task -> quite boring to code and debug probably
-                for res in self.get_resource_units_names():
-                    next_state.resource_availability[res] = self.get_quantity_resource(resource=res, time=next_state.t)
-                for res in self.get_resource_types_names():
+                for res in self.get_resource_units_names() + self.get_resource_types_names():
+                # for res in self.get_resource_units_names():
+                #     next_state.resource_availability[res] = self.get_quantity_resource(resource=res, time=next_state.t)
+                # for res in self.get_resource_types_names():
                     next_event = next_state.get_next_resource_event(res)
                     previous_event = next_state.get_last_resource_event(res)
                     next_state.resource_availability[res] = self.get_quantity_resource(resource=res, time=next_state.t,
                                                                                        previous_resource_event=previous_event,
                                                                                        next_resource_event=next_event)
                     print('resource_availability: ', next_state.resource_availability[res])
-                    ####
-                    # retrieve the last event (time + delta) for given resource ?
+
                     if (next_event is None) or (next_event.t == next_state.t): # TODO: Check if it should be t or t+1
                         print('resource_availability: ', res, next_state.resource_availability[res])
                         previous_event = next_state.get_last_resource_event(res)
-                        previousresourcehangetime = None
-                        if previous_event is not None:
-                            previousresourcehangetime = previous_event.t
+                        print('previous_event: ', previous_event)
+                        # previousresourcehangetime = None
+                        # if previous_event is not None:
+                        #     previousresourcehangetime = previous_event.t
                         next_change_t_dist = self.get_next_resource_change_time_distribution(resource=res,
                                                                                              currenttime=next_state.t,
-                                                                                             previousresourcehangetime=previousresourcehangetime)
+                                                                                             previous_resource_event=previous_event)
+                                                                                             # previousresourcehangetime=previousresourcehangetime)
                         next_change_t_sample = next_change_t_dist.sample()
                         print('current_time: ', next_state.t)
                         print('action: ', action)
@@ -758,7 +761,9 @@ class SchedulingDomain(WithPrecedence,
                         print('next_change_delta_sample: ', next_change_delta_sample)
                         new_event = SchedulingEvent(next_change_t_sample, SchedulingEventEnum.RESOURCE_AVAILABILITY, next_change_delta_sample, res)
                         next_state.events.append((next_change_t_sample, new_event))
-                        print(next_state.events)
+                        print('events: ', next_state.events)
+                        print('EVENTS ')
+                        next_state.print_events()
                 # TODO :
                 # Here, if the resource_used[res] is > resource_availability[res] we should be forced to pause some task??
                 # If yes which one ? all ? and we let the algorithm resume the one of its choice in the next time step ?

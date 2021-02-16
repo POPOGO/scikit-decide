@@ -1,5 +1,6 @@
 from __future__ import annotations
 from typing import List, Union, Dict, Optional
+from skdecide.builders.scheduling.scheduling_domains_modelling import SchedulingEvent
 from enum import Enum
 
 __all__ = ['UncertainResourceAvailabilityChanges', 'DeterministicResourceAvailabilityChanges',
@@ -20,7 +21,7 @@ class UncertainResourceAvailabilityChanges:
         (either resource type or resource unit) at the given time."""
         return self._get_original_quantity_resource(resource, time, **kwargs)
 
-    def _get_next_resource_change_time_distribution(self, resource: str, currenttime: int, previousresourcehangetime: Optional[int]):
+    def _get_next_resource_change_time_distribution(self, resource: str, currenttime: int, previous_resource_event: Optional[(int, int)] = None):
         """ Return a Distribution defining the probability to experience a resource availability event at any time step.
         If a time step is not in the distribution, assume its probability to experience an event is 0.
         The current time step and the time step of the previous resource event given as input can be used to define this distribution.
@@ -29,16 +30,16 @@ class UncertainResourceAvailabilityChanges:
         """
         raise NotImplementedError
 
-    def get_next_resource_change_time_distribution(self, resource: str, currenttime: int, previousresourcehangetime: Optional[int] = None):
+    def get_next_resource_change_time_distribution(self, resource: str, currenttime: int, previous_resource_event: Optional[SchedulingEvent] = None):
         """ Return a Distribution defining the probability to experience a resource availability event at any time step.
         If a time step is not in the distribution, assume its probability to experience an event is 0.
         The current time step and the time step of the previous resource event given as input can be used to define this distribution.
         E.g. A distribution for 4 time step (from 13 to 16) can be defined as:
             Distribution([(13, 0.4), (14, 0.3), (15, 0.2), (16, 0.1)]).
         """
-        return self._get_next_resource_change_time_distribution(resource, currenttime, previousresourcehangetime)
+        return self._get_next_resource_change_time_distribution(resource, currenttime, previous_resource_event)
 
-    def _get_next_resource_change_delta_distribution(self, resource: str, change_time: int, previous_resource_event: Optional[(int, int)] = None):
+    def _get_next_resource_change_delta_distribution(self, resource: str, change_time: int, previous_resource_event: Optional[SchedulingEvent] = None):
         """ Return a Distribution defining the magnitude of a resource availability change.
         The time step of the event and the information about the previous event (time and magnitude) can be used to define this distribution.
         E.g. A distribution for 4 levels of changes can be defined as:

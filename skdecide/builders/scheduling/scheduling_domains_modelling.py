@@ -6,11 +6,11 @@ from skdecide.builders.scheduling.task import Task
 
 
 class SchedulingEventEnum(Enum):
-    RESOURCE_AVAILABILITY = 0
-    TASK_START = 1
-    TASK_END = 2
-    TASK_PAUSED = 3
-    TASK_RESUME = 4
+    RESOURCE_AVAILABILITY = "RESOURCE_AVAILABILITY"
+    TASK_START = "TASK_START"
+    TASK_END = "TASK_END"
+    TASK_PAUSED = "TASK_PAUSED"
+    TASK_RESUME = "TASK_RESUME"
 
 
 class SchedulingEvent:
@@ -160,7 +160,8 @@ class State:
         return events
 
     def get_last_resource_event(self, resource: str):
-        events = sorted([ev for ev in self.events if (ev[0] < self.t) and (ev[1].event_type == SchedulingEventEnum.RESOURCE_AVAILABILITY) and (ev[1].resource == resource)], key=lambda a: a[0])
+        events = sorted([ev for ev in self.events if (ev[0] <= self.t) and (ev[1].event_type == SchedulingEventEnum.RESOURCE_AVAILABILITY) and (ev[1].resource == resource)], key=lambda a: a[0])
+        # print('eeeevents:', sorted([ev for ev in self.events if (ev[0] <= self.t) and (ev[1].event_type == SchedulingEventEnum.RESOURCE_AVAILABILITY) and (ev[1].resource == resource)], key=lambda a: a[0]))
         if len(events) > 0:
             event = events[-1][1]
         else:
@@ -168,12 +169,19 @@ class State:
         return event
 
     def get_next_resource_event(self, resource: str):
-        events = sorted([ev for ev in self.events if (ev[0] >= self.t) and (ev[1].event_type == SchedulingEventEnum.RESOURCE_AVAILABILITY) and (ev[1].resource == resource)], key=lambda a: a[0])
+        events = sorted([ev for ev in self.events if (ev[0] > self.t) and (ev[1].event_type == SchedulingEventEnum.RESOURCE_AVAILABILITY) and (ev[1].resource == resource)], key=lambda a: a[0])
         if len(events) > 0:
             event = events[0][1]
         else:
             event = None
         return event
+
+    def print_events(self):
+        events = sorted(self.events, key=lambda a: a[0])
+        out = "--- EVENTS ---\n"
+        for ev in events:
+            out += str(ev[1].t) + ": " + str(ev[1].event_type) + "(" + str(ev[1].resource) + ": " + str(ev[1].resource_delta)+ ")\n"
+        print(out)
 
 # class SamplableAction:
 #     """

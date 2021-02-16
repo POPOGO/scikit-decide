@@ -143,7 +143,7 @@ class MyExampleRCPSPDomain_varying_initial_resource_levels(D):
         self.initialize_domain()
 
     def _get_max_horizon(self) -> int:
-        return 50
+        return 500
 
     def _get_successors(self) -> Dict[int, List[int]]:
         return {1: [2,3], 2:[4], 3:[5], 4:[5], 5:[]}
@@ -164,7 +164,7 @@ class MyExampleRCPSPDomain_varying_initial_resource_levels(D):
         return ['r1', 'r2']
 
     def _get_task_duration(self, task: int, mode: Optional[int] = 1, progress_from: Optional[float] = 0.) -> int:
-        all_durations = {1: 0, 2: 5, 3: 6, 4: 4, 5: 0}
+        all_durations = {1: 0, 2: 50, 3: 60, 4: 40, 5: 0}
         return all_durations[task]
 
     def _get_original_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
@@ -172,15 +172,18 @@ class MyExampleRCPSPDomain_varying_initial_resource_levels(D):
                                    'r2': [2 for i in range(self.get_max_horizon())]}
         return all_resource_quantities[resource][time]
 
-    def _get_next_resource_change_time_distribution(self, res: str, currenttime: int, previousresourcehangetime: Optional[int]):
+    def _get_next_resource_change_time_distribution(self, res: str, currenttime: int, previous_resource_event: Optional[SchedulingEvent] = None):
+        if previous_resource_event is None:
+            previousresourcehangetime = 0
+        else:
+            previousresourcehangetime = previous_resource_event.t
         dist_vals = []
         previous_val = 0.
-        if previousresourcehangetime is None:
-            previousresourcehangetime = 0
+
         for t in range(currenttime+1, self.get_max_horizon()):
             time_without_changes = t - previousresourcehangetime
             # p = expon.cdf(time_without_changes, scale=3)
-            p_cum = planck.cdf(k=time_without_changes, lambda_=0.5)
+            p_cum = planck.cdf(k=time_without_changes, lambda_=0.05)
             p = p_cum - previous_val
             if p_cum > 0.99:
                 p_cum = 1.
@@ -189,15 +192,16 @@ class MyExampleRCPSPDomain_varying_initial_resource_levels(D):
             dist_vals.append((t, p))
             if p_cum == 1.:
                 break
-        # print('next_changes: ', res, currenttime, previousresourcehangetime, dist_vals)
+        print('next_changes: ', res, currenttime, previousresourcehangetime, dist_vals)
         assert sum([x[1] for x in dist_vals])
         return DiscreteDistribution(dist_vals)
 
-    def _get_next_resource_change_delta_distribution(self, res: str, change_time: int, previous_resource_event: SchedulingEvent):
+    def _get_next_resource_change_delta_distribution(self, res: str, change_time: int, previous_resource_event: Optional[SchedulingEvent] = None):
         if previous_resource_event is None:
             dist_vals = [(-1, 0.5), (1, 0.5)]
         else:
             previous_resource_event_delta = previous_resource_event.resource_delta
+            print('previous_resource_event: ', previous_resource_event_delta)
             if previous_resource_event_delta < 0:
                 dist_vals = [(previous_resource_event_delta - 1, 0.2),
                              (previous_resource_event_delta + 1, 0.8)]
