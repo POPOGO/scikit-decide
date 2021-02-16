@@ -159,9 +159,16 @@ class State:
         events = [ev for ev in self.events if ev[0] == self.t]
         return events
 
+    def get_next_event_t(self):
+        events = sorted([ev for ev in self.events if (ev[0] > self.t)], key=lambda a: a[0])
+        if len(events) > 0:
+            t = events[0][0]
+        else:
+            t = self.t + 1
+        return t
+
     def get_last_resource_event(self, resource: str):
         events = sorted([ev for ev in self.events if (ev[0] <= self.t) and (ev[1].event_type == SchedulingEventEnum.RESOURCE_AVAILABILITY) and (ev[1].resource == resource)], key=lambda a: a[0])
-        # print('eeeevents:', sorted([ev for ev in self.events if (ev[0] <= self.t) and (ev[1].event_type == SchedulingEventEnum.RESOURCE_AVAILABILITY) and (ev[1].resource == resource)], key=lambda a: a[0]))
         if len(events) > 0:
             event = events[-1][1]
         else:

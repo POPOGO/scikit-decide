@@ -111,7 +111,6 @@ class SchedulingDomain(WithPrecedence,
         """This function will be used if the domain is defined with UncertainTransitions. This function will be ignored
          if the domain is defined as a Simulation. This function may also be used by uncertainty-specialised solvers
           on deterministic domains."""
-        print('GET DISTRIB STATE ...')
         current_state: State = memory
         next_state = current_state if self.inplace_environment else current_state.copy()
         next_state = self.update_pause_tasks_uncertain(next_state, action)
@@ -248,7 +247,8 @@ class SchedulingDomain(WithPrecedence,
             next_states = self.update_res_consumption_uncertain(next_states)
             next_states = self.update_complete_tasks_uncertain(next_states)
             for next_state, _ in next_states.get_values():
-                next_state.t = next_state.t+1
+                # next_state.t = next_state.t+1
+                next_state.t = next_state.get_next_event_t()
         return next_states
 
     def update_time_simulation(self, state: State, action: SchedulingAction):
@@ -287,7 +287,11 @@ class SchedulingDomain(WithPrecedence,
                                                          mode=next_state.tasks_mode[task_id],
                                                          resource_unit_names=set(),
                                                          time_since_start=
-                                                         next_state.tasks_details[task_id].get_task_active_time(next_state.t+1))
+                                                         next_state.tasks_details[task_id].get_task_active_time(
+                                                             next_state.get_next_event_t())
+                                                         # time_since_start=
+                                                         # next_state.tasks_details[task_id].get_task_active_time(next_state.t+1)
+                                                         )
                 for r in resource_to_use:
                     prev = next_state.resource_used_for_task[task_id][r]
                     new = resource_to_use[r]
@@ -322,7 +326,8 @@ class SchedulingDomain(WithPrecedence,
                 # of ressource
                 next_state.tasks_progress[task_id] += self.get_task_progress(task_id,
                                                                              t_from=next_state.t,
-                                                                             t_to=next_state.t+1,
+                                                                             # t_to=next_state.t+1,
+                                                                             t_to=next_state.get_next_event_t(),
                                                                              mode=next_state.tasks_mode[task_id],
                                                                              sampled_duration=next_state.tasks_details[
                                                                                  task_id].sampled_duration)
@@ -721,8 +726,6 @@ class SchedulingDomain(WithPrecedence,
 
         if action.time_progress:
             for next_state, _ in next_states.get_values():
-                print('current_time___: ', next_state.t)
-
                 # update the resource used / resource availability function on the possible new availability
                 # and consumption of ongoing task -> quite boring to code and debug probably
                 for res in self.get_resource_units_names() + self.get_resource_types_names():
@@ -734,34 +737,21 @@ class SchedulingDomain(WithPrecedence,
                     next_state.resource_availability[res] = self.get_quantity_resource(resource=res, time=next_state.t,
                                                                                        previous_resource_event=previous_event,
                                                                                        next_resource_event=next_event)
-                    print('resource_availability: ', next_state.resource_availability[res])
-
                     if (next_event is None) or (next_event.t == next_state.t): # TODO: Check if it should be t or t+1
-                        print('resource_availability: ', res, next_state.resource_availability[res])
-                        previous_event = next_state.get_last_resource_event(res)
-                        print('previous_event: ', previous_event)
-                        # previousresourcehangetime = None
-                        # if previous_event is not None:
-                        #     previousresourcehangetime = previous_event.t
+                        # previous_event = next_state.get_last_resource_event(res)
                         next_change_t_dist = self.get_next_resource_change_time_distribution(resource=res,
                                                                                              currenttime=next_state.t,
                                                                                              previous_resource_event=previous_event)
                                                                                              # previousresourcehangetime=previousresourcehangetime)
                         next_change_t_sample = next_change_t_dist.sample()
-                        print('current_time: ', next_state.t)
-                        print('action: ', action)
 
-                        print('next_change_t_dist: ', next_change_t_dist.get_values())
-                        print('next_change_t_sample: ', next_change_t_sample)
                         next_change_delta_dist = self.get_next_resource_change_delta_distribution(resource=res,
                                                                                                   change_time=next_change_t_sample,
                                                                                                   previous_resource_event=previous_event)
                         next_change_delta_sample = next_change_delta_dist.sample()
-                        print('next_change_delta_dist: ', next_change_delta_dist.get_values())
-                        print('next_change_delta_sample: ', next_change_delta_sample)
+
                         new_event = SchedulingEvent(next_change_t_sample, SchedulingEventEnum.RESOURCE_AVAILABILITY, next_change_delta_sample, res)
                         next_state.events.append((next_change_t_sample, new_event))
-                        print('events: ', next_state.events)
                         print('EVENTS ')
                         next_state.print_events()
                 # TODO :
