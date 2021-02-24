@@ -771,3 +771,26 @@ def test_sgs_policies(domain):
                                                   o: f'{o.observation} - cost: {o.value.cost:.2f}')
     print("Cost :", sum([v.cost for v in values]))
     check_rollout_consistency(domain, states)
+
+    # Using a deterministic domain as reference + executing on a different deterministic domain
+    deterministic_domains = build_n_determinist_from_stochastic(domain,
+                                                                nb_instance=3)
+    training_domains = deterministic_domains
+    solver = GPHH(training_domains=training_domains[1:2],
+                  domain_model=training_domains[1],
+                  weight=-1,
+                  verbose=True,
+                  training_domains_names=training_domains_names,
+                  params_gphh=ParametersGPHH.fast_test()
+                  )
+    solver.solve(domain_factory=lambda: training_domains[1])
+    solver.set_domain(training_domains[0])
+    states, actions, values = rollout_episode(domain=training_domains[0],
+                                              max_steps=1000,
+                                              solver=solver,
+                                              from_memory=state,
+                                              verbose=False,
+                                              outcome_formatter=lambda
+                                                  o: f'{o.observation} - cost: {o.value.cost:.2f}')
+    print("Cost :", sum([v.cost for v in values]))
+    check_rollout_consistency(domain, states)

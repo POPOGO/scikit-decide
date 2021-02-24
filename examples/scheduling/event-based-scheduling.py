@@ -153,27 +153,6 @@ class MyExampleRCPSPDomain_varying_initial_resource_levels(D):
 
 
 
-
-class D(UncertainSchedulingDomain,
-                      SingleMode,
-                      DeterministicTaskDuration,
-                      DeterministicTaskProgress,
-                      WithoutResourceUnit,
-                      WithoutPreallocations,
-                      WithoutTimeLag,
-                      WithoutTimeWindow,
-                      WithoutResourceSkills,
-                      WithoutResourceAvailabilityChange,
-                      WithoutConditionalTasks,
-                      RenewableOnly,
-                      ConstantResourceConsumption,  # problem with unimplemented classes with this
-                      WithoutPreemptivity,  # problem with unimplemented classes with this
-                      WithoutModeCosts,
-                      WithoutResourceCosts
-                      ):
-    pass
-
-
 def run_example():
 
     domain = MyExampleRCPSPDomain_varying_initial_resource_levels()

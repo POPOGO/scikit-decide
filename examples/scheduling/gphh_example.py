@@ -129,13 +129,14 @@ def run_gphh():
     domain: RCPSP = load_domain("j601_1.sm")
     # domain: RCPSP = load_domain("j1201_9.sm")
 
-    training_domains_names = ["j601_"+str(i)+".sm" for i in range(1, 11)]
+    training_domains_names = ["j601_"+str(i)+".sm" for i in range(2, 11)]
+    # training_domains_names = ["j601_1.sm"]
 
     training_domains = []
     for td in training_domains_names:
         training_domains.append(load_domain(td))
 
-    runtimes = []
+    # runtimes = []
     for i in range(n_runs):
 
         domain.set_inplace_environment(False)
@@ -147,10 +148,10 @@ def run_gphh():
         # with open('cp_reference_makespans') as json_file:
         #     cp_reference_makespans = json.load(json_file)
 
-        start = time.time()
+        # start = time.time()
 
         solver = GPHH(training_domains=training_domains,
-                      domain_model=training_domains[3],
+                      domain_model=training_domains[0],
                       weight=-1,
                       verbose=True,
                       reference_permutations=cp_reference_permutations,
@@ -163,9 +164,9 @@ def run_gphh():
 
         solver.solve(domain_factory=lambda: domain)
 
-        end = time.time()
-
-        runtimes.append((end-start))
+        # end = time.time()
+        #
+        # runtimes.append((end-start))
 
         heuristic = solver.hof
         print('ttype:', solver.best_heuristic)
@@ -186,8 +187,8 @@ def run_gphh():
         makespans.append(sum([v.cost for v in values]))
 
     print('makespans: ', makespans)
-    print('runtimes: ', runtimes)
-    print('runtime - mean: ', np.mean(runtimes))
+    # print('runtimes: ', runtimes)
+    # print('runtime - mean: ', np.mean(runtimes))
 
 
 
