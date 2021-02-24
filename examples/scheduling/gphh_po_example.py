@@ -73,7 +73,7 @@ def run_gphh():
                                                   max_steps=1000,
                                                   solver=solver,
                                                   from_memory=state,
-                                                  verbose=False,
+                                                  verbose=True,
                                                   outcome_formatter=lambda o: f'{o.observation} - cost: {o.value.cost:.2f}')
         print("Cost :", sum([v.cost for v in values]))
         makespans.append(sum([v.cost for v in values]))

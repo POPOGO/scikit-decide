@@ -782,6 +782,12 @@ class GPHHPolicy(DeterministicPolicies):
         cheat_mode = False
 
         do_model = build_do_domain(self.domain_model)
+        do_model.successors = self.domain.get_successors()
+        # print('DO: ', self.domain.get_resource_types_names())
+        # do_model.resources_list = self.domain.get_resource_types_names()
+        # do_model.resources = self.domain.get_resource
+        # TODO: Need to make sure do_domain is defined in a coherent way (i.e. all info from execution domain except uncertain information only)
+        
         modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
         modes = modes[1:-1]
 

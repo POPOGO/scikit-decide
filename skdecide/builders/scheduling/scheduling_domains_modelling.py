@@ -25,6 +25,10 @@ class SchedulingEvent:
         self.resource_delta = resource_delta
         self.resource = resource
 
+    def __str__(self):
+        return str((self.t, self.event_type, self.resource_delta, self.resource))
+
+
 
 class SchedulingActionEnum(Enum):
     """
@@ -142,6 +146,9 @@ class State:
             if key == 'tasks_details':
                 for key2 in sorted(self.tasks_details.keys()):
                     s += str(self.tasks_details[key2])+"\t"
+            elif key == 'events':
+                # s += ""
+                s += str([str(ev[0])+str(ev[1]) for ev in self.events])+"\n"
             else:
                 s += str(key)+":"+str(getattr(self, key))+"\n"
         return s
@@ -165,6 +172,7 @@ class State:
             t = events[0][0]
         else:
             t = self.t + 1
+        # t = self.t + 1
         return t
 
     def get_last_resource_event(self, resource: str):

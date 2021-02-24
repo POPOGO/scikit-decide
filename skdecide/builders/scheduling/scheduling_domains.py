@@ -601,12 +601,14 @@ class SchedulingDomain(WithPrecedence,
             next_state.tasks_remaining.remove(started_task)
             next_state.tasks_details[started_task].start = next_state.t
             next_state.tasks_details[started_task].resources = resource_to_use
-            next_state.tasks_details[started_task].sampled_duration = \
-                self.get_latest_sampled_duration(task=started_task, mode=mode, progress_from=0.)  # TODO: what to do with this, so far the sample is stored and then used by get_task_progress()
+            duration = self.get_latest_sampled_duration(task=started_task, mode=mode, progress_from=0.)  # TODO: what to do with this, so far the sample is stored and then used by get_task_progress()
+            next_state.tasks_details[started_task].sampled_duration = duration
             for res in resource_to_use:
                 next_state.resource_used[res] += resource_to_use[res]
             next_state.resource_used_for_task[started_task] = resource_to_use
             next_state.tasks_progress[started_task] = 0.
+            new_event = SchedulingEvent((next_state.t + duration), SchedulingEventEnum.TASK_END)
+            next_state.events.append(((next_state.t + duration), new_event))
             return next_state
         return state
 
@@ -724,9 +726,12 @@ class SchedulingDomain(WithPrecedence,
                 next_state.resource_availability[res] = self.get_quantity_resource(resource=res, time=next_state.t)
             for res in self.get_resource_types_names():
                 next_state.resource_availability[res] = self.get_quantity_resource(resource=res, time=next_state.t)
+            print('EVENTS ')
+            next_state.print_events()
             # TODO :
             # Here, if the resource_used[res] is > resource_availability[res] we should be forced to pause some task??
             # If yes which one ? all ? and we let the algorithm resume the one of its choice in the next time step ?
+
             return next_state
         return state
 

@@ -573,7 +573,7 @@ def test_planning_algos(domain, solver_str):
     state = domain.get_initial_state()
     print("Initial state : ", state)
     if solver_str == 'LazyAstar':
-        solver = LazyAstar(from_state=state, heuristic=None, verbose=True)
+        solver = LazyAstar(from_state=state, heuristic=None, verbose=False)
     solver.solve(domain_factory=lambda: domain)
     states, actions, values = rollout_episode(domain=domain,
                                               max_steps=1000,

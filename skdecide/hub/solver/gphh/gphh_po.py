@@ -608,12 +608,13 @@ class GPHH(Solver, DeterministicPolicies):
                            mode_optim=self.objective_weights)
 
         pf = result_storage_to_pareto_front(rs)
-        print('rs: ', rs)
-        plot_storage_2d(rs, ["0", "1"])
-        plt.show()
-        plot_pareto_2d(pf, ["0", "1"])
-        plt.show()
-        print('pf: ', pf)
+
+        # print('rs: ', rs)
+        # plot_storage_2d(rs, ["0", "1"])
+        # plt.show()
+        # plot_pareto_2d(pf, ["0", "1"])
+        # plt.show()
+        # print('pf: ', pf)
 
         # self.best_heuristic = sorted(self.final_pop, key=lambda x: x[1].vector_fitness[0])[0]
         # self.best_heuristic = self.final_pop[0][0]
@@ -782,6 +783,11 @@ class GPHHPolicy(DeterministicPolicies):
         cheat_mode = False
 
         do_model = build_do_domain(self.domain_model)
+        do_model.successors = self.domain.get_successors()
+        # print('DO: ', self.domain.get_resource_types_names())
+        # do_model.resources_list = self.domain.get_resource_types_names()
+        # do_model.resources = self.domain.get_resource
+        # TODO: Need to make sure do_domain is defined in a coherent way (i.e. all info from execution domain except uncertain information only)
         modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
         modes = modes[1:-1]
 
