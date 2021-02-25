@@ -21,6 +21,17 @@ class UncertainResourceAvailabilityChanges:
         (either resource type or resource unit) at the given time."""
         return self._get_original_quantity_resource(resource, time, **kwargs)
 
+    def get_all_planned_resource_changes(self, resource: str) -> List[int]:
+        """Return the time steps of the planned resource changes as a list.
+         A timestep t is in the list if the resource quantity at t differs from the resource quantity at t-1
+         in the original quantity."""
+        vals = []
+        for t in range(1, self._get_max_horizon()):
+            if self.get_original_quantity_resource(t) != self.get_original_quantity_resource(t-1):
+                vals.append(t)
+        return vals
+
+
     def _get_next_resource_change_time_distribution(self, resource: str, currenttime: int, previous_resource_event: Optional[(int, int)] = None):
         """ Return a Distribution defining the probability to experience a resource availability event at any time step.
         If a time step is not in the distribution, assume its probability to experience an event is 0.
@@ -112,6 +123,12 @@ class WithoutResourceAvailabilityChange(DeterministicResourceAvailabilityChanges
         """Return the resource availability (int) for the given resource
         (either resource type or resource unit) at the given time."""
         return self._get_fixed_quantity_resource(resource)
+
+    def get_all_planned_resource_changes(self, resource: str) -> List[int]:
+        """Return the time steps of the planned resource changes as a list.
+         A timestep t is in the list if the resource quantity at t differs from the resource quantity at t-1
+         in the original quantity."""
+        return []
 
     # def _get_quantity_resource(self, resource: str, time: int, previous_resource_event: Optional[(int, int)] = None, next_resource_event: Optional[(int, int)] = None, **kwargs) -> int:
     #     """Sample an amount of resource availability (int) for the given resource
