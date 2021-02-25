@@ -208,6 +208,7 @@ class SchedulingDomain(WithPrecedence,
         """Return the maximum time horizon (int)"""
         raise NotImplementedError
 
+
     def initialize_domain(self):
         """Initialize a scheduling domain. This function needs to be called when instantiating a scheduling domain."""
         self.sampled_durations = {} # TODO : remove ?
@@ -218,6 +219,7 @@ class SchedulingDomain(WithPrecedence,
         self.full_predecessors = self.graph.ancestors_map()
         self.full_successors = self.graph.descendants_map()
         self.inplace_environment = False
+        self.event_based_time_progress = True
 
     def set_inplace_environment(self, inplace_environment: bool):
         """
@@ -225,6 +227,13 @@ class SchedulingDomain(WithPrecedence,
         The inplace version is several times faster but will lead to bugs in graph search solver.
         """
         self.inplace_environment = inplace_environment
+
+    def set_event_based_time_progress(self, event_based_progress: bool):
+        """
+        Activate or not the fact that the simulator uses events to progress in time (True) or uses
+        periodic time progress with time increments of 1 (False).
+        """
+        self.event_based_time_progress = event_based_progress
 
     # Build the precedence graph.
     # TODO : maybe this function should be in the precedence module.
