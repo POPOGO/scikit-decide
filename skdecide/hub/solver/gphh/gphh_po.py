@@ -592,16 +592,15 @@ class GPHH(Solver, DeterministicPolicies):
 
 
         self.final_pop = []
+        self.final_pop_individual_dict = {}
         for s in pop:
             fits = self.evaluate_heuristic(s, self.training_domains)
             self.final_pop.append((str(s), TupleFitness(np.array(fits), len(fits))))
+            self.final_pop_individual_dict[str(s)] = s
 
         print('final_pop: ')
         for s in self.final_pop:
             print('\t', s[0], s[1].vector_fitness)
-
-        # self.best_heuristic = sorted(self.final_pop, key=lambda x: x[1][0])[0]
-        # print('best_heuristic: ', self.best_heuristic)
 
         rs = ResultStorage(list_solution_fits=self.final_pop,
                            best_solution=None,
@@ -609,12 +608,16 @@ class GPHH(Solver, DeterministicPolicies):
 
         pf = result_storage_to_pareto_front(rs)
 
-        # print('rs: ', rs)
-        # plot_storage_2d(rs, ["0", "1"])
-        # plt.show()
-        # plot_pareto_2d(pf, ["0", "1"])
-        # plt.show()
-        # print('pf: ', pf)
+        print('pf_sol: ')
+        for s in pf.list_solution_fits:
+            print('\t', s[0], s[1].vector_fitness, self.final_pop_individual_dict[s[0]], type(self.final_pop_individual_dict[s[0]]))
+
+        print('rs: ', rs)
+        plot_storage_2d(rs, ["0", "1"])
+        plt.show()
+        plot_pareto_2d(pf, ["0", "1"])
+        plt.show()
+        print('pf: ', pf)
 
         # self.best_heuristic = sorted(self.final_pop, key=lambda x: x[1].vector_fitness[0])[0]
         # self.best_heuristic = self.final_pop[0][0]
