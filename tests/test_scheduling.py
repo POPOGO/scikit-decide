@@ -5,7 +5,7 @@ from typing import Dict, List, Any, Optional, Union, Set
 import random
 
 from skdecide import Distribution
-from skdecide.builders.scheduling.scheduling_domains import SingleModeRCPSP, SchedulingDomain, \
+from skdecide.builders.scheduling.scheduling_domains import SingleModeRCPSP, SingleModeRCPSPCalendar, SchedulingDomain, \
     SchedulingObjectiveEnum, SingleModeRCPSP_Stochastic_Durations, \
     SingleModeRCPSP_Stochastic_Durations_WithConditionalTasks, \
     SingleModeRCPSP_Simulated_Stochastic_Durations_WithConditionalTasks, \
@@ -78,6 +78,50 @@ class ToyRCPSPDomain(SingleModeRCPSP):
     def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
         all_resource_quantities = {'r1': 2, 'r2': 1}
         return all_resource_quantities[resource]
+
+
+class ToyRCPSPCalendarDomain(SingleModeRCPSPCalendar):
+    def _get_original_quantity_resource(self, resource: str, time: int, **kwargs) -> int:
+        val = 0
+        if resource == 'r1':
+            if time % 10 == 0:
+                val = 1
+            else:
+                val = 2
+        if resource == 'r2':
+            val = 1
+        return val
+
+    def _get_objectives(self) -> List[SchedulingObjectiveEnum]:
+        return [SchedulingObjectiveEnum.MAKESPAN]
+
+    def __init__(self):
+        self.initialize_domain()
+
+    def _get_max_horizon(self) -> int:
+        return 50
+
+    def _get_successors(self) -> Dict[int, List[int]]:
+        return {1: [2,3], 2:[4], 3:[5], 4:[5], 5:[]}
+
+    def _get_tasks_ids(self) -> Union[Set[int], Dict[int, Any], List[int]]:
+        return set([1,2,3,4,5])
+
+    def _get_tasks_mode(self) -> Dict[int, ModeConsumption]:
+        return {
+            1: ConstantModeConsumption({'r1': 0, 'r2': 0}),
+            2: ConstantModeConsumption({'r1': 1, 'r2': 1}),
+            3: ConstantModeConsumption({'r1': 1, 'r2': 0}),
+            4: ConstantModeConsumption({'r1': 2, 'r2': 1}),
+            5: ConstantModeConsumption({'r1': 0, 'r2': 0})
+        }
+
+    def _get_resource_types_names(self) -> List[str]:
+        return ['r1', 'r2']
+
+    def _get_task_duration(self, task: int, mode: Optional[int] = 1, progress_from: Optional[float] = 0.) -> int:
+        all_durations = {1: 0, 2: 5, 3: 6, 4: 4, 5: 0}
+        return all_durations[task]
 
 
 class ToyMRCPSPDomain_WithCost(MultiModeRCPSPWithCost):
@@ -397,6 +441,7 @@ class ToySimulatedCondSRCPSPDomain(SingleModeRCPSP_Simulated_Stochastic_Duration
 
 @pytest.mark.parametrize("domain", [
     (ToyRCPSPDomain()),
+    (ToyRCPSPCalendarDomain()),
     (ToyMRCPSPDomain_WithCost()),
     (ToySRCPSPDomain()),
     (ToyMS_RCPSPDomain()),
