@@ -156,16 +156,17 @@ class SchedulingDomain(WithPrecedence,
         s.resource_availability = resource_availability
         s.resource_used = {r: 0 for r in s.resource_availability}
 
-        for r in self.get_resource_types_names():
-            tmp = self.get_all_planned_resource_changes(r)
-            for t in tmp:
-                ev = SchedulingEvent(t=t, event_type=SchedulingEventEnum.RESOURCE_PLANNED_AVAILABILITY, resource=r)
-                s.events.append((t, ev))
-        for r in self.get_resource_units_names():
-            tmp = self.get_all_planned_resource_changes(r)
-            for t in tmp:
-                ev = SchedulingEvent(t=t, event_type=SchedulingEventEnum.RESOURCE_PLANNED_AVAILABILITY, resource=r)
-                s.events.append((t, ev))
+        if self.event_based_time_progress:
+            for r in self.get_resource_types_names():
+                tmp = self.get_all_planned_resource_changes(r)
+                for t in tmp:
+                    ev = SchedulingEvent(t=t, event_type=SchedulingEventEnum.RESOURCE_PLANNED_AVAILABILITY, resource=r)
+                    s.events.append((t, ev))
+            for r in self.get_resource_units_names():
+                tmp = self.get_all_planned_resource_changes(r)
+                for t in tmp:
+                    ev = SchedulingEvent(t=t, event_type=SchedulingEventEnum.RESOURCE_PLANNED_AVAILABILITY, resource=r)
+                    s.events.append((t, ev))
 
         return s
 
@@ -628,8 +629,9 @@ class SchedulingDomain(WithPrecedence,
                 next_state.resource_used[res] += resource_to_use[res]
             next_state.resource_used_for_task[started_task] = resource_to_use
             next_state.tasks_progress[started_task] = 0.
-            new_event = SchedulingEvent((next_state.t + duration), SchedulingEventEnum.TASK_END)
-            next_state.events.append(((next_state.t + duration), new_event))
+            if self.event_based_time_progress:
+                new_event = SchedulingEvent((next_state.t + duration), SchedulingEventEnum.TASK_END)
+                next_state.events.append(((next_state.t + duration), new_event))
             return next_state
         return state
 
@@ -661,8 +663,9 @@ class SchedulingDomain(WithPrecedence,
                 next_state.resource_used_for_task[started_task] = resource_to_use
                 next_state.tasks_progress[started_task] = 0.
                 states_and_proba += [(next_state, value_duration[1])]
-                new_event = SchedulingEvent((next_state.t + value_duration[0]), SchedulingEventEnum.TASK_END)
-                next_state.events.append(((next_state.t + value_duration[0]), new_event))
+                if self.event_based_time_progress:
+                    new_event = SchedulingEvent((next_state.t + value_duration[0]), SchedulingEventEnum.TASK_END)
+                    next_state.events.append(((next_state.t + value_duration[0]), new_event))
 
             return DiscreteDistribution(states_and_proba)
         return DiscreteDistribution([(state, 1)])
@@ -783,9 +786,9 @@ class SchedulingDomain(WithPrecedence,
                                                                                                       change_time=next_change_t_sample,
                                                                                                       previous_resource_event=previous_event)
                             next_change_delta_sample = next_change_delta_dist.sample()
-
-                            new_event = SchedulingEvent(next_change_t_sample, SchedulingEventEnum.RESOURCE_AVAILABILITY, next_change_delta_sample, res)
-                            next_state.events.append((next_change_t_sample, new_event))
+                            if self.event_based_time_progress:
+                                new_event = SchedulingEvent(next_change_t_sample, SchedulingEventEnum.RESOURCE_AVAILABILITY, next_change_delta_sample, res)
+                                next_state.events.append((next_change_t_sample, new_event))
                         print('EVENTS ')
                         next_state.print_events()
                 # TODO :
