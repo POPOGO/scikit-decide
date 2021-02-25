@@ -155,6 +155,18 @@ class SchedulingDomain(WithPrecedence,
                                       for runit in self.get_resource_units_names()})
         s.resource_availability = resource_availability
         s.resource_used = {r: 0 for r in s.resource_availability}
+
+        for r in self.get_resource_types_names():
+            tmp = self.get_all_planned_resource_changes(r)
+            for t in tmp:
+                ev = SchedulingEvent(t=t, event_type=SchedulingEventEnum.RESOURCE_PLANNED_AVAILABILITY, resource=r)
+                s.events.append((t, ev))
+        for r in self.get_resource_units_names():
+            tmp = self.get_all_planned_resource_changes(r)
+            for t in tmp:
+                ev = SchedulingEvent(t=t, event_type=SchedulingEventEnum.RESOURCE_PLANNED_AVAILABILITY, resource=r)
+                s.events.append((t, ev))
+
         return s
 
     def _get_action_space_(self) -> D.T_agent[Space[D.T_event]]:

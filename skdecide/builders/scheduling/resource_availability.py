@@ -27,7 +27,7 @@ class UncertainResourceAvailabilityChanges:
          in the original quantity."""
         vals = []
         for t in range(1, self._get_max_horizon()):
-            if self.get_original_quantity_resource(t) != self.get_original_quantity_resource(t-1):
+            if self.get_original_quantity_resource(resource, t) != self.get_original_quantity_resource(resource, t-1):
                 vals.append(t)
         return vals
 

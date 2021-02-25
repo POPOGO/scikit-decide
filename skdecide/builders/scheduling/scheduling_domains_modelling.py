@@ -7,6 +7,7 @@ from skdecide.builders.scheduling.task import Task
 
 class SchedulingEventEnum(Enum):
     RESOURCE_AVAILABILITY = "RESOURCE_AVAILABILITY"
+    RESOURCE_PLANNED_AVAILABILITY = "RESOURCE_PLANNED_AVAILABILITY"
     TASK_START = "TASK_START"
     TASK_END = "TASK_END"
     TASK_PAUSED = "TASK_PAUSED"
