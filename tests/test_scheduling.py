@@ -441,7 +441,7 @@ class ToySimulatedCondSRCPSPDomain(SingleModeRCPSP_Simulated_Stochastic_Duration
 
 @pytest.mark.parametrize("domain", [
     (ToyRCPSPDomain()),
-    (ToyRCPSPCalendarDomain()),
+    # (ToyRCPSPCalendarDomain()),
     (ToyMRCPSPDomain_WithCost()),
     (ToySRCPSPDomain()),
     (ToyMS_RCPSPDomain()),
@@ -484,17 +484,18 @@ def check_task_duration(domain, states: List[State]):
             if id in states[-1].tasks_complete:  # needed for conditional tasks
                 expected_duration = domain.get_task_duration(id, states[-1].tasks_mode[id])
                 actual_duration = states[-1].tasks_details[id].end - states[-1].tasks_details[id].start
+                print('task: ', id)
+                print('actual_duration: ', actual_duration)
+                print('expected_duration: ', expected_duration)
+                print('s: ', states[-1].tasks_details[id].start)
+                print('e: ', states[-1].tasks_details[id].end)
                 assert actual_duration == expected_duration, 'duration different than expected for task ' + str(id)
     else:
         for id in domain.get_tasks_ids():
             if id in states[-1].tasks_complete:  # needed for conditional tasks
                 expected_duration = states[-1].tasks_details[id].sampled_duration
                 actual_duration = states[-1].tasks_details[id].end - states[-1].tasks_details[id].start
-                print('task: ', id)
-                print('actual_duration: ', actual_duration)
-                print('expected_duration: ', expected_duration)
-                print('s: ', states[-1].tasks_details[id].start)
-                print('e: ', states[-1].tasks_details[id].end)
+
 
                 assert actual_duration == expected_duration, 'duration different than expected for task ' + str(id)
 
@@ -547,13 +548,13 @@ def check_skills(domain, states: List[State]):
 
 
 @pytest.mark.parametrize("domain", [
-    # (ToyRCPSPDomain()),
-    # (ToyMRCPSPDomain_WithCost()),
-    (ToyMS_RCPSPDomain())
+    (ToyRCPSPDomain()),
+    (ToyMRCPSPDomain_WithCost()),
+    (ToyMS_RCPSPDomain()),
 ])
 @pytest.mark.parametrize("do_solver", [
     # (SolvingMethod.PILE),
-    # (SolvingMethod.CP),
+    (SolvingMethod.CP),
     #(SolvingMethod.LP), # Runs on Popo but not ORC
     #(SolvingMethod.LNS_CP), # long to run ...
     (SolvingMethod.GA),
@@ -838,4 +839,53 @@ def test_sgs_policies(domain):
                                               outcome_formatter=lambda
                                                   o: f'{o.observation} - cost: {o.value.cost:.2f}')
     print("Cost :", sum([v.cost for v in values]))
+    check_rollout_consistency(domain, states)
+
+@pytest.mark.parametrize("domain", [
+    (ToyRCPSPDomain()),
+    (ToySRCPSPDomain()),
+])
+def test_rollout_different_time_progress(domain):
+    domain.set_event_based_time_progress(True)
+    state = domain.get_initial_state()
+    states, actions, values = rollout_episode(domain=domain,
+                                              max_steps=1000,
+                                              solver=None,
+                                              from_memory=state,
+                                              outcome_formatter=lambda o: f'{o.observation} - cost: {o.value.cost:.2f}')
+    check_rollout_consistency(domain, states)
+
+    domain.set_event_based_time_progress(False)
+    state = domain.get_initial_state()
+    states, actions, values = rollout_episode(domain=domain,
+                                              max_steps=1000,
+                                              solver=None,
+                                              from_memory=state,
+                                              outcome_formatter=lambda o: f'{o.observation} - cost: {o.value.cost:.2f}')
+    check_rollout_consistency(domain, states)
+
+
+@pytest.mark.parametrize("domain", [
+    (ToyRCPSPCalendarDomain())
+])
+@pytest.mark.parametrize("do_solver", [
+    (SolvingMethod.CP),
+])
+def test_cp_rcpsp_calendar(domain, do_solver):
+    print('domain: ', domain)
+    domain.set_inplace_environment(False)
+    state = domain.get_initial_state()
+    print("Initial state : ", state)
+    solver = DOSolver(policy_method_params=PolicyMethodParams(base_policy_method=BasePolicyMethod.SGS_PRECEDENCE,
+                                                              delta_index_freedom=0,
+                                                              delta_time_freedom=0),
+                      method=do_solver)
+    solver.solve(domain_factory=lambda: domain)
+    print(do_solver)
+    states, actions, values = rollout_episode(domain=domain,
+                                              max_steps=1000,
+                                              solver=solver,
+                                              from_memory=state,
+                                              action_formatter=lambda o: str(o),
+                                              outcome_formatter=lambda o: f'{o.observation} - cost: {o.value.cost:.2f}')
     check_rollout_consistency(domain, states)
