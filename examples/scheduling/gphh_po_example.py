@@ -22,8 +22,8 @@ def run_gphh():
     domain: RCPSP = load_domain("j601_1.sm")
     # domain: RCPSP = load_domain("j1201_9.sm")
 
-    training_domains_names = ["j601_"+str(i)+".sm" for i in range(2, 11)]
-    # training_domains_names = ["j601_1.sm"]
+    # training_domains_names = ["j601_"+str(i)+".sm" for i in range(2, 11)]
+    training_domains_names = ["j601_2.sm"]
 
     training_domains = []
     for td in training_domains_names:

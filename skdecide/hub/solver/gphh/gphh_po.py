@@ -3,7 +3,7 @@ from skdecide.builders.solver.policy import DeterministicPolicies, UncertainPoli
 from skdecide import Domain, Solver
 from skdecide.builders.scheduling.modes import SingleMode
 from skdecide.builders.scheduling.scheduling_domains_modelling import State, SchedulingAction, SchedulingActionEnum
-from skdecide.builders.scheduling.scheduling_domains import SchedulingDomain, D, MultiModeRCPSP, SingleModeRCPSP
+from skdecide.builders.scheduling.scheduling_domains import SchedulingDomain, D, MultiModeRCPSP, SingleModeRCPSP, MultiModeMultiSkillRCPSP, MultiModeMultiSkillRCPSPCalendar
 from skdecide import rollout_episode
 from skdecide.hub.solver.sgs_policies.sgs_policies import PolicyMethodParams, BasePolicyMethod, PolicyRCPSP
 from skdecide.hub.solver.do_solver.do_solver_scheduling import PolicyRCPSP, DOSolver, PolicyMethodParams, BasePolicyMethod, SolvingMethod
@@ -11,7 +11,7 @@ from skdecide.builders.discrete_optimization.rcpsp.solver.cpm import CPM
 from skdecide.hub.solver.do_solver.sk_to_do_binding import build_do_domain
 from skdecide.builders.discrete_optimization.rcpsp.rcpsp_model import RCPSPSolution
 from skdecide.hub.domain.rcpsp.rcpsp_sk import MSRCPSP, RCPSP, MRCPSP
-from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPSolution_Variant
+from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPSolution_Variant, Employee, SkillDetail
 from skdecide.builders.scheduling.skills import WithoutResourceSkills, WithResourceSkills
 from skdecide.builders.discrete_optimization.generic_tools.result_storage.result_storage import ResultStorage, result_storage_to_pareto_front, plot_pareto_2d, plot_storage_2d
 from skdecide.builders.discrete_optimization.generic_tools.do_problem import TupleFitness
@@ -31,7 +31,11 @@ import numpy as np
 import random
 from scipy import stats
 from scipy.spatial import distance
+import logging
 
+
+logger = logging.getLogger('skdecide.gphh_po')
+logger.setLevel(logging.INFO)
 
 def if_then_else(input, output1, output2):
     if input: return output1
@@ -599,6 +603,7 @@ class GPHH(Solver, DeterministicPolicies):
             self.final_pop_individual_dict[str(s)] = s
 
         print('final_pop: ')
+
         for s in self.final_pop:
             print('\t', s[0], s[1].vector_fitness)
 
@@ -785,11 +790,42 @@ class GPHHPolicy(DeterministicPolicies):
         run_sgs = True
         cheat_mode = False
 
+
         do_model = build_do_domain(self.domain_model)
         do_model.successors = self.domain.get_successors()
         # print('DO: ', self.domain.get_resource_types_names())
-        # do_model.resources_list = self.domain.get_resource_types_names()
-        # do_model.resources = self.domain.get_resource
+        do_model.resources_list = self.domain.get_resource_types_names()
+        do_model.resources = {r: self.domain.get_fixed_quantity_resource(r)
+                                               for r in self.domain.get_resource_types_names()}
+        do_model.non_renewable_resources = [r for r in self.domain.get_resource_renewability()
+                                                             if not self.domain.get_resource_renewability()[r]]
+        do_model.horizon = self.domain.get_max_horizon()
+
+        if isinstance(self.domain, (MultiModeMultiSkillRCPSP, MultiModeMultiSkillRCPSPCalendar)):
+            employees_dict = {}
+            employees = self.domain.get_resource_units_names()
+            sorted_employees = sorted(employees)
+            # print(sorted_employees)
+            for employee, i in zip(sorted_employees, range(len(sorted_employees))):
+                skills = self.domain.get_skills_of_resource(resource=employee)
+                skills_details = {r: SkillDetail(skill_value=skills[r],
+                                                 efficiency_ratio=0,
+                                                 experience=0)
+                                  for r in skills}
+                employees_dict[i] = Employee(dict_skill=skills_details,
+                                             calendar_employee=[bool(self.domain.get_quantity_resource(employee,
+                                                                                                             time=t))
+                                                                for t in range(self.domain.get_max_horizon() + 1)])
+            do_model.employees = employees_dict
+            do_model.employees_availability = [sum([self.domain.get_quantity_resource(employee, time=t)
+                                                                  for employee in employees])
+                                               for t in range(self.domain.get_max_horizon()+1)]
+            do_model.resources_availability={r: [self.domain.get_quantity_resource(r, time=t)
+                                                                 for t in range(self.domain.get_max_horizon()+1)]
+                                             for r in self.domain.get_resource_types_names()}
+            do_model.sink_task = max(self.domain.get_tasks_ids()),
+            do_model.source_task = min(self.domain.get_tasks_ids())
+
         # TODO: Need to make sure do_domain is defined in a coherent way (i.e. all info from execution domain except uncertain information only)
         modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
         modes = modes[1:-1]
@@ -797,6 +833,8 @@ class GPHHPolicy(DeterministicPolicies):
         if run_sgs:
             scheduled_tasks_start_times = {}
             for j in observation.tasks_details.keys():
+                for res in do_model.resources_list:
+                    do_model.mode_details[j][1][res] = self.domain.get_task_modes(j)[1].get_resource_need_at_time(res, 0)
                 if observation.tasks_details[j].start is not None:
                     scheduled_tasks_start_times[j] = observation.tasks_details[j].start
                     do_model.mode_details[j][1]['duration'] = observation.tasks_details[j].sampled_duration
@@ -856,14 +894,13 @@ class GPHHPolicy(DeterministicPolicies):
                                                     modes_vector=modes,
                                                     priority_worker_per_task=priority_worker_per_task
                                          )
-                schedule = solution.schedule
+                # schedule = solution.schedule
             # elif isinstance(self.domain, MRCPSP):
             elif isinstance(self.domain, WithoutResourceSkills):
                 solution = RCPSPSolution(problem=do_model,
                                          rcpsp_permutation=normalized_values_for_do,
                                          rcpsp_modes=modes,
                                          )
-                schedule = solution.rcpsp_schedule
 
 
             # solution = RCPSPSolution(problem=do_model,
@@ -876,6 +913,8 @@ class GPHHPolicy(DeterministicPolicies):
                                                                      {j: observation.tasks_details[j]
                                                                       for j in observation.tasks_complete},
                                                                      scheduled_tasks_start_times=scheduled_tasks_start_times)
+            schedule = solution.rcpsp_schedule
+
 
         else:
             schedule = None
