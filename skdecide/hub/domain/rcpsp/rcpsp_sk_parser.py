@@ -36,7 +36,7 @@ def load_domain(file_name="j1201_1.sm"):
     return my_domain
 
 
-def load_multiskill_domain(file_name=None):
+def load_multiskill_domain(file_name=None, one_ressource_per_task=False):
     from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill_parser import parse_file, \
         get_data_available, MS_RCPSPModel
     if file_name is None:
@@ -50,6 +50,7 @@ def load_multiskill_domain(file_name=None):
         file_path = files[0]
         model_msrcpsp, new_tame_to_original_task_id = parse_file(file_path,
                                                                  max_horizon=2000)
+    model_msrcpsp.one_unit_per_task_max = one_ressource_per_task
     resource_type_names = list(model_msrcpsp.resources_list)
     resource_skills = {r: {} for r in resource_type_names}
     resource_availability = {r: model_msrcpsp.resources_availability[r][0]
