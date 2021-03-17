@@ -9,12 +9,19 @@ from skdecide.hub.solver.sgs_policies.sgs_policies import PolicyMethodParams, Ba
 from skdecide.hub.solver.do_solver.do_solver_scheduling import PolicyRCPSP, DOSolver, PolicyMethodParams, BasePolicyMethod, SolvingMethod
 from skdecide.builders.discrete_optimization.rcpsp.solver.cpm import CPM
 from skdecide.hub.solver.do_solver.sk_to_do_binding import build_do_domain
-from skdecide.builders.discrete_optimization.rcpsp.rcpsp_model import RCPSPSolution
+# from skdecide.builders.discrete_optimization.rcpsp.rcpsp_model import RCPSPSolution
+from discrete_optimization.rcpsp.rcpsp_model import RCPSPSolution
+
 from skdecide.hub.domain.rcpsp.rcpsp_sk import MSRCPSP, RCPSP, MRCPSP
-from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPSolution_Variant, Employee, SkillDetail
+from discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPSolution_Variant, Employee, SkillDetail, TaskDetails
+# from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPSolution_Variant, Employee, SkillDetail
 from skdecide.builders.scheduling.skills import WithoutResourceSkills, WithResourceSkills
 from skdecide.builders.discrete_optimization.generic_tools.result_storage.result_storage import ResultStorage, result_storage_to_pareto_front, plot_pareto_2d, plot_storage_2d
+# from discrete_optimization.generic_tools.result_storage.result_storage import ResultStorage, result_storage_to_pareto_front, plot_pareto_2d, plot_storage_2d
+
 from skdecide.builders.discrete_optimization.generic_tools.do_problem import TupleFitness
+# from discrete_optimization.generic_tools.do_problem import TupleFitness
+
 import matplotlib.pyplot as plt
 
 from enum import Enum
@@ -164,6 +171,165 @@ def feature_lfd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
     return cpm[task_id]._LFD/cpm_esd
 
 
+def feature_mean_successor_esd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_esd(domain, cpm, cpm_esd, s))
+        return np.mean(vals)
+    else:
+        return 0.
+
+
+def feature_mean_successor_lsd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_lsd(domain, cpm, cpm_esd, s))
+        return np.mean(vals)
+    else:
+        return 0.
+
+
+def feature_mean_successor_efd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_efd(domain, cpm, cpm_esd, s))
+        return np.mean(vals)
+    else:
+        return 0.
+
+
+def feature_mean_successor_lfd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_lfd(domain, cpm, cpm_esd, s))
+        return np.mean(vals)
+    else:
+        return 0.
+
+
+def feature_max_successor_esd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_esd(domain, cpm, cpm_esd, s))
+        return np.max(vals)
+    else:
+        return 0.
+
+
+def feature_max_successor_lsd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_lsd(domain, cpm, cpm_esd, s))
+        return np.max(vals)
+    else:
+        return 0.
+
+
+def feature_max_successor_efd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_efd(domain, cpm, cpm_esd, s))
+        return np.max(vals)
+    else:
+        return 0.
+
+
+def feature_max_successor_lfd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_lfd(domain, cpm, cpm_esd, s))
+        return np.max(vals)
+    else:
+        return 0.
+
+
+def feature_sum_all_skills_needs(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = [domain.tasks_mode[task_id][1][key] for key in domain.tasks_mode[task_id][1].keys() if key != 'duration']
+    val = sum(vals)
+    return val
+
+
+def feature_mean_successor_sum_skills_needs(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_sum_all_skills_needs(domain, cpm, cpm_esd, s))
+        return np.mean(vals)
+    else:
+        return 0.
+
+
+def feature_max_successor_sum_skills_needs(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_sum_all_skills_needs(domain, cpm, cpm_esd, s))
+        return np.max(vals)
+    else:
+        return 0.
+
+
+def feature_max_proportion_skills_needs(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+
+    q_count = {}
+    for q in domain.skills_set:
+        q_count[q] = 0
+    for qs in domain.resource_skills.values():
+        for q2 in qs.keys():
+            q_count[q2] = q_count[q2] + qs[q2]
+
+    for key in domain.tasks_mode[task_id][1].keys():
+        # if (key != 'duration') and (domain.tasks_mode[task_id][1][key] > 0.):
+        if key != 'duration':
+            avail = float(q_count[key])
+            need = float(domain.tasks_mode[task_id][1][key])
+            vals.append(need / avail)
+    val = max(vals)
+    return val
+
+
+def feature_mean_successor_proportion_skills_needs(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_max_proportion_skills_needs(domain, cpm, cpm_esd, s))
+        return np.mean(vals)
+    else:
+        return 0.
+
+
+def feature_max_successor_proportion_skills_needs(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
+    """ """
+    vals = []
+    if len(domain.get_successors_task(task_id)) > 0:
+        for s in domain.get_successors_task(task_id):
+            vals.append(feature_max_proportion_skills_needs(domain, cpm, cpm_esd, s))
+        return np.max(vals)
+    else:
+        return 0.
+
 class D(SchedulingDomain, SingleMode):
     pass
 
@@ -184,6 +350,21 @@ class FeatureEnum(Enum):
     LATEST_START_DATE = "LSD"
     EARLIEST_FINISH_DATE = "EFD"
     LATEST_FINISH_DATE = "LFD"
+    MEAN_SUCCESSORS_ESD = "MEAN_SUCCESSORS_ESD"
+    MEAN_SUCCESSORS_LSD = "MEAN_SUCCESSORS_LSD"
+    MEAN_SUCCESSORS_EFD = "MEAN_SUCCESSORS_EFD"
+    MEAN_SUCCESSORS_LFD = "MEAN_SUCCESSORS_LFD"
+    MAX_SUCCESSORS_ESD = "MAX_SUCCESSORS_ESD"
+    MAX_SUCCESSORS_LSD = "MAX_SUCCESSORS_LSD"
+    MAX_SUCCESSORS_EFD = "MAX_SUCCESSORS_EFD"
+    MAX_SUCCESSORS_LFD = "MAX_SUCCESSORS_LFD"
+
+    SUM_ALL_SKILLS_NEEDS = "SUM_SKILLS"
+    MAX_SKILL_NEED_PROPORTION = "MAX_SKILL_NEED_PROPORTION"
+    MEAN_SUCCESSORS_SUM_ALL_SKILLS_NEEDS = "MEAN_SUCCESSORS_SUM_SKILLS"
+    MEAN_SUCCESSORS_SKILL_NEED_PROPORTION = "MEAN_SUCCESSORS_SKILL_NEED_PROPORTION"
+    MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS = "MAX_SUCCESSORS_SUM_SKILLS"
+    MAX_SUCCESSORS_SKILL_NEED_PROPORTION = "MAX_SUCCESSORS_SKILL_NEED_PROPORTION"
 
 
 feature_function_map = {FeatureEnum.TASK_DURATION: feature_task_duration,
@@ -200,7 +381,22 @@ feature_function_map = {FeatureEnum.TASK_DURATION: feature_task_duration,
                         FeatureEnum.EARLIEST_START_DATE: feature_esd,  #
                         FeatureEnum.EARLIEST_FINISH_DATE: feature_efd,  #
                         FeatureEnum.LATEST_START_DATE: feature_lsd,  #
-                        FeatureEnum.LATEST_FINISH_DATE: feature_lfd}  #
+                        FeatureEnum.LATEST_FINISH_DATE: feature_lfd,  #
+                        FeatureEnum.SUM_ALL_SKILLS_NEEDS: feature_sum_all_skills_needs,
+                        FeatureEnum.MAX_SKILL_NEED_PROPORTION: feature_max_proportion_skills_needs,
+                        FeatureEnum.MEAN_SUCCESSORS_EFD: feature_mean_successor_efd,
+                        FeatureEnum.MEAN_SUCCESSORS_LFD: feature_mean_successor_lfd,
+                        FeatureEnum.MEAN_SUCCESSORS_ESD: feature_mean_successor_esd,
+                        FeatureEnum.MEAN_SUCCESSORS_LSD: feature_mean_successor_lsd,
+                        FeatureEnum.MAX_SUCCESSORS_EFD: feature_max_successor_efd,
+                        FeatureEnum.MAX_SUCCESSORS_LFD: feature_max_successor_lfd,
+                        FeatureEnum.MAX_SUCCESSORS_ESD: feature_max_successor_esd,
+                        FeatureEnum.MAX_SUCCESSORS_LSD: feature_max_successor_lsd,
+                        FeatureEnum.MEAN_SUCCESSORS_SKILL_NEED_PROPORTION: feature_mean_successor_proportion_skills_needs,
+                        FeatureEnum.MEAN_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: feature_mean_successor_sum_skills_needs,
+                        FeatureEnum.MAX_SUCCESSORS_SKILL_NEED_PROPORTION: feature_max_successor_proportion_skills_needs,
+                        FeatureEnum.MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: feature_max_successor_sum_skills_needs,
+                        }  #
 
 feature_static_map = {FeatureEnum.TASK_DURATION: True,
                         FeatureEnum.RESSOURCE_TOTAL: True,
@@ -216,7 +412,22 @@ feature_static_map = {FeatureEnum.TASK_DURATION: True,
                         FeatureEnum.EARLIEST_START_DATE: True,  #
                         FeatureEnum.EARLIEST_FINISH_DATE: True,  #
                         FeatureEnum.LATEST_START_DATE: True,  #
-                        FeatureEnum.LATEST_FINISH_DATE: True}  #
+                        FeatureEnum.LATEST_FINISH_DATE: True,  #
+                        FeatureEnum.SUM_ALL_SKILLS_NEEDS: True,
+                        FeatureEnum.MAX_SKILL_NEED_PROPORTION: True,
+                        FeatureEnum.MEAN_SUCCESSORS_EFD: True,
+                        FeatureEnum.MEAN_SUCCESSORS_LFD: True,
+                        FeatureEnum.MEAN_SUCCESSORS_ESD: True,
+                        FeatureEnum.MEAN_SUCCESSORS_LSD: True,
+                        FeatureEnum.MAX_SUCCESSORS_EFD: True,
+                        FeatureEnum.MAX_SUCCESSORS_LFD: True,
+                        FeatureEnum.MAX_SUCCESSORS_ESD: True,
+                        FeatureEnum.MAX_SUCCESSORS_LSD: True,
+                        FeatureEnum.MEAN_SUCCESSORS_SKILL_NEED_PROPORTION: True,
+                        FeatureEnum.MEAN_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: True,
+                        FeatureEnum.MAX_SUCCESSORS_SKILL_NEED_PROPORTION: True,
+                        FeatureEnum.MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: True,
+                      }
 
 
 # class EvaluationGPHH(Enum):
@@ -386,6 +597,20 @@ class ParametersGPHH:
                        FeatureEnum.N_PREDECESSORS,
                        FeatureEnum.N_SUCCESSORS,
                        FeatureEnum.ALL_DESCENDANTS,
+                       FeatureEnum.MEAN_SUCCESSORS_EFD,
+                       FeatureEnum.MEAN_SUCCESSORS_LFD,
+                        FeatureEnum.MEAN_SUCCESSORS_ESD,
+                        FeatureEnum.MEAN_SUCCESSORS_LSD,
+                        FeatureEnum.MAX_SUCCESSORS_EFD,
+                        FeatureEnum.MAX_SUCCESSORS_LFD,
+                        FeatureEnum.MAX_SUCCESSORS_ESD,
+                        FeatureEnum.MAX_SUCCESSORS_LSD,
+                       FeatureEnum.SUM_ALL_SKILLS_NEEDS,
+                       FeatureEnum.MAX_SKILL_NEED_PROPORTION,
+                       FeatureEnum.MEAN_SUCCESSORS_SKILL_NEED_PROPORTION,
+                       FeatureEnum.MEAN_SUCCESSORS_SUM_ALL_SKILLS_NEEDS,
+                        FeatureEnum.MAX_SUCCESSORS_SKILL_NEED_PROPORTION,
+                        FeatureEnum.MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS,
                        # FeatureEnum.RESSOURCE_REQUIRED,
                        # FeatureEnum.RESSOURCE_AVG,
                        # FeatureEnum.RESSOURCE_MAX,
@@ -617,12 +842,12 @@ class GPHH(Solver, DeterministicPolicies):
         for s in pf.list_solution_fits:
             print('\t', s[0], s[1].vector_fitness, self.final_pop_individual_dict[s[0]], type(self.final_pop_individual_dict[s[0]]))
 
-        print('rs: ', rs)
-        plot_storage_2d(rs, ["0", "1"])
-        plt.show()
-        plot_pareto_2d(pf, ["0", "1"])
-        plt.show()
-        print('pf: ', pf)
+        # print('rs: ', rs)
+        # plot_storage_2d(rs, ["0", "1"])
+        # plt.show()
+        # plot_pareto_2d(pf, ["0", "1"])
+        # plt.show()
+        # print('pf: ', pf)
 
         # self.best_heuristic = sorted(self.final_pop, key=lambda x: x[1].vector_fitness[0])[0]
         # self.best_heuristic = self.final_pop[0][0]
@@ -696,10 +921,11 @@ class GPHH(Solver, DeterministicPolicies):
                                         normalized_values[i] not in {1, len(normalized_values)}]
             # if isinstance(domain, MSRCPSP):
             if not isinstance(self.domain, WithoutResourceSkills):
-                # print('modes: ', len(modes))
                 solution = MS_RCPSPSolution_Variant(problem=do_model,
                                                     priority_list_task=normalized_values_for_do,
                                                     modes_vector=modes,
+                                                    priority_worker_per_task=[[w for w in do_model.employees]
+                                                                              for i in range(do_model.n_jobs_non_dummy)]
                                                     )
                 last_activity = max(list(solution.schedule.keys()))
                 do_makespan = solution.schedule[last_activity]['end_time']
@@ -795,6 +1021,7 @@ class GPHHPolicy(DeterministicPolicies):
         do_model.successors = self.domain.get_successors()
         # print('DO: ', self.domain.get_resource_types_names())
         do_model.resources_list = self.domain.get_resource_types_names()
+        do_model.resources_set = set(do_model.resources_list)
         do_model.resources = {r: self.domain.get_fixed_quantity_resource(r)
                                                for r in self.domain.get_resource_types_names()}
         do_model.non_renewable_resources = [r for r in self.domain.get_resource_renewability()
@@ -812,7 +1039,7 @@ class GPHHPolicy(DeterministicPolicies):
                                                  efficiency_ratio=0,
                                                  experience=0)
                                   for r in skills}
-                employees_dict[i] = Employee(dict_skill=skills_details,
+                employees_dict[employee] = Employee(dict_skill=skills_details,
                                              calendar_employee=[bool(self.domain.get_quantity_resource(employee,
                                                                                                              time=t))
                                                                 for t in range(self.domain.get_max_horizon() + 1)])
@@ -823,7 +1050,7 @@ class GPHHPolicy(DeterministicPolicies):
             do_model.resources_availability={r: [self.domain.get_quantity_resource(r, time=t)
                                                                  for t in range(self.domain.get_max_horizon()+1)]
                                              for r in self.domain.get_resource_types_names()}
-            do_model.sink_task = max(self.domain.get_tasks_ids()),
+            do_model.sink_task = max(self.domain.get_tasks_ids())
             do_model.source_task = min(self.domain.get_tasks_ids())
 
         # TODO: Need to make sure do_domain is defined in a coherent way (i.e. all info from execution domain except uncertain information only)
@@ -867,6 +1094,13 @@ class GPHHPolicy(DeterministicPolicies):
                                                        task_id=task_id,
                                                        state=observation)
                               for lf in self.list_feature]
+            # print('------', task_id, '------')
+            # for lf in self.list_feature:
+            #     print('lf: ', lf, ' ::  ', feature_function_map[lf](domain=self.domain,
+            #                                            cpm = cpm,
+            #                                             cpm_esd=cpm_esd,
+            #                                            task_id=task_id,
+            #                                            state=observation))
             output_value = self.func_heuristic(*input_features)
             raw_values.append(output_value)
 
@@ -889,31 +1123,65 @@ class GPHHPolicy(DeterministicPolicies):
                 # print('self.domain.: ', self.domain.get_resource_units_names())
                 priority_worker_per_task = [[w for w in self.domain.get_resource_units_names()]
                                             for i in range(len(self.domain.get_tasks_ids())-2)]
+                # print('normalized_values_for_do: ', normalized_values_for_do)
+
                 solution = MS_RCPSPSolution_Variant(problem=do_model,
                                                     priority_list_task=normalized_values_for_do,
                                                     modes_vector=modes,
                                                     priority_worker_per_task=priority_worker_per_task
                                          )
-                # schedule = solution.schedule
+
+                finished = observation.tasks_complete
+                # finished = set(
+                #     [tt for tt in solution.schedule if solution.schedule[tt]["end_time"] <= t])
+                # completed = {tt: TaskDetails(solution.schedule[tt]["start_time"],
+                #                              solution.schedule[tt]["end_time"],
+                #                              resource_units_used=list(solution.employee_usage.get(tt, {}).keys()))
+                #              for tt in finished}
+                completed = {tt: TaskDetails(observation.tasks_details[tt].start,
+                                             observation.tasks_details[tt].end,
+                                             resource_units_used=list(observation.tasks_details[tt].resources.keys()))
+                             for tt in finished}
+                # ongoing = {tt: TaskDetails(solution.schedule[tt]["start_time"],
+                #                            solution.schedule[tt]["end_time"],
+                #                            resource_units_used=list(solution.employee_usage.get(tt, {}).keys()))
+                #            for tt in observation.tasks_ongoing}
+
+                ongoing = {tt: TaskDetails(observation.tasks_details[tt].start,
+                                           observation.tasks_details[tt].start + observation.tasks_details[
+                                               tt].sampled_duration,
+                                           resource_units_used=list(observation.resource_used_for_task[tt].keys()))
+                           for tt in observation.tasks_ongoing}
+
+                solution.run_sgs_partial(current_t=t,
+                                         completed_tasks=completed,
+                                         scheduled_tasks_start_times=ongoing)
+                schedule = solution.schedule
+                resource_allocation = solution.employee_usage
+                # resource_allocation_priority = {j + 2: solution.priority_worker_per_task[j] for j in
+                #                                 range(len(solution.priority_worker_per_task))}
+
             # elif isinstance(self.domain, MRCPSP):
             elif isinstance(self.domain, WithoutResourceSkills):
                 solution = RCPSPSolution(problem=do_model,
                                          rcpsp_permutation=normalized_values_for_do,
                                          rcpsp_modes=modes,
                                          )
-
+                solution.generate_schedule_from_permutation_serial_sgs_2(current_t=t,
+                                                                         completed_tasks=
+                                                                         {j: observation.tasks_details[j]
+                                                                          for j in observation.tasks_complete},
+                                                                         scheduled_tasks_start_times=scheduled_tasks_start_times)
+                schedule = solution.rcpsp_schedule
+                resource_allocation = None
+                # resource_allocation_priority = None
 
             # solution = RCPSPSolution(problem=do_model,
             #                          rcpsp_permutation=normalized_values_for_do,
             #                          rcpsp_modes=modes,
             #                          )
 
-            solution.generate_schedule_from_permutation_serial_sgs_2(current_t=t,
-                                                                     completed_tasks=
-                                                                     {j: observation.tasks_details[j]
-                                                                      for j in observation.tasks_complete},
-                                                                     scheduled_tasks_start_times=scheduled_tasks_start_times)
-            schedule = solution.rcpsp_schedule
+
 
 
         else:
@@ -928,7 +1196,10 @@ class GPHHPolicy(DeterministicPolicies):
                                      delta_index_freedom=self.params_gphh.delta_index_freedom,
                                      delta_time_freedom=self.params_gphh.delta_time_freedom),
                                  permutation_task=normalized_values,
-                                 modes_dictionnary=modes_dictionnary)
+                                 modes_dictionnary=modes_dictionnary,
+                                 resource_allocation = resource_allocation
+                                 # resource_allocation_priority = resource_allocation_priority
+                                 )
         action: SchedulingAction = sgs_policy.sample_action(observation)
         # print('action_2: ', action.action)
         return action
@@ -1090,37 +1361,60 @@ class FixedPermutationPolicy(DeterministicPolicies):
         pass
 
     def _get_next_action(self, observation: D.T_agent[D.T_observation]) -> D.T_agent[D.T_concurrency[D.T_event]]:
+
         run_sgs = True
         cheat_mode = False
 
         do_model = build_do_domain(self.domain_model)
+        do_model.successors = self.domain.get_successors()
+        # print('DO: ', self.domain.get_resource_types_names())
+        do_model.resources_list = self.domain.get_resource_types_names()
+        do_model.resources_set = set(do_model.resources_list)
+        do_model.resources = {r: self.domain.get_fixed_quantity_resource(r)
+                              for r in self.domain.get_resource_types_names()}
+        do_model.non_renewable_resources = [r for r in self.domain.get_resource_renewability()
+                                            if not self.domain.get_resource_renewability()[r]]
+        do_model.horizon = self.domain.get_max_horizon()
+
+        if isinstance(self.domain, (MultiModeMultiSkillRCPSP, MultiModeMultiSkillRCPSPCalendar)):
+            employees_dict = {}
+            employees = self.domain.get_resource_units_names()
+            sorted_employees = sorted(employees)
+            # print(sorted_employees)
+            for employee, i in zip(sorted_employees, range(len(sorted_employees))):
+                skills = self.domain.get_skills_of_resource(resource=employee)
+                skills_details = {r: SkillDetail(skill_value=skills[r],
+                                                 efficiency_ratio=0,
+                                                 experience=0)
+                                  for r in skills}
+                employees_dict[employee] = Employee(dict_skill=skills_details,
+                                                    calendar_employee=[bool(self.domain.get_quantity_resource(employee,
+                                                                                                              time=t))
+                                                                       for t in
+                                                                       range(self.domain.get_max_horizon() + 1)])
+            do_model.employees = employees_dict
+            do_model.employees_availability = [sum([self.domain.get_quantity_resource(employee, time=t)
+                                                    for employee in employees])
+                                               for t in range(self.domain.get_max_horizon() + 1)]
+            do_model.resources_availability = {r: [self.domain.get_quantity_resource(r, time=t)
+                                                   for t in range(self.domain.get_max_horizon() + 1)]
+                                               for r in self.domain.get_resource_types_names()}
+            do_model.sink_task = max(self.domain.get_tasks_ids())
+            do_model.source_task = min(self.domain.get_tasks_ids())
+
+        # TODO: Need to make sure do_domain is defined in a coherent way (i.e. all info from execution domain except uncertain information only)
         modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
         modes = modes[1:-1]
 
         if run_sgs:
             scheduled_tasks_start_times = {}
             for j in observation.tasks_details.keys():
+                for res in do_model.resources_list:
+                    do_model.mode_details[j][1][res] = self.domain.get_task_modes(j)[1].get_resource_need_at_time(res,
+                                                                                                                  0)
                 if observation.tasks_details[j].start is not None:
                     scheduled_tasks_start_times[j] = observation.tasks_details[j].start
                     do_model.mode_details[j][1]['duration'] = observation.tasks_details[j].sampled_duration
-
-        # do_model = build_do_domain(self.domain)
-        # modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
-        # modes = modes[1:-1]
-        #
-        # if run_sgs:
-        #     scheduled_tasks_start_times = {}
-        #     for j in observation.tasks_details.keys():
-        #         # schedule[j] = {}
-        #         if observation.tasks_details[j].start is not None:
-        #             # schedule[j]["start_time"] = observation.tasks_details[j].start
-        #             scheduled_tasks_start_times[j] = observation.tasks_details[j].start
-        #         # if observation.tasks_details[j].end is not None:
-        #         #     schedule[j]["end_time"] = observation.tasks_details[j].end
-        #         else:
-        #             if not cheat_mode:
-        #                 # print('do_model: ', do_model)
-        #                 do_model.mode_details[j][1]['duration'] = self.domain_model.sample_task_duration(j, 1, 0.)
 
         normalized_values = self.fixed_perm
 
@@ -1131,38 +1425,120 @@ class FixedPermutationPolicy(DeterministicPolicies):
         # print('normalized_values_for_do: ', normalized_values_for_do)
         t = observation.t
 
+        # modes_dictionnary = {}
+        # for i in range(len(normalized_values)):
+        #     modes_dictionnary[i+1] = 1
+        #
+        # if run_sgs:
+        #
+        #     solution = RCPSPSolution(problem=do_model,
+        #                              rcpsp_permutation=normalized_values_for_do,
+        #                              rcpsp_modes=modes,
+        #                              )
+        #
+        #     solution.generate_schedule_from_permutation_serial_sgs_2(current_t=t,
+        #                                                              completed_tasks=
+        #                                                              {j: observation.tasks_details[j]
+        #                                                               for j in observation.tasks_complete},
+        #                                                              scheduled_tasks_start_times=scheduled_tasks_start_times)
+        #
+        #     schedule = solution.rcpsp_schedule
+        # else:
+        #     schedule = None
+
         modes_dictionnary = {}
         for i in range(len(normalized_values)):
-            modes_dictionnary[i+1] = 1
+            modes_dictionnary[i + 1] = 1
 
         if run_sgs:
+            # if isinstance(self.domain, MSRCPSP):
+            if not isinstance(self.domain, WithoutResourceSkills):
+                # print('self.domain.: ', self.domain.get_resource_units_names())
+                priority_worker_per_task = [[w for w in self.domain.get_resource_units_names()]
+                                            for i in range(len(self.domain.get_tasks_ids()) - 2)]
+                # print('normalized_values_for_do: ', normalized_values_for_do)
 
-            solution = RCPSPSolution(problem=do_model,
-                                     rcpsp_permutation=normalized_values_for_do,
-                                     rcpsp_modes=modes,
-                                     )
+                solution = MS_RCPSPSolution_Variant(problem=do_model,
+                                                    priority_list_task=normalized_values_for_do,
+                                                    modes_vector=modes,
+                                                    priority_worker_per_task=priority_worker_per_task
+                                                    )
 
-            solution.generate_schedule_from_permutation_serial_sgs_2(current_t=t,
-                                                                     completed_tasks=
-                                                                     {j: observation.tasks_details[j]
-                                                                      for j in observation.tasks_complete},
-                                                                     scheduled_tasks_start_times=scheduled_tasks_start_times)
+                finished = observation.tasks_complete
+                # finished = set(
+                #     [tt for tt in solution.schedule if solution.schedule[tt]["end_time"] <= t])
+                # completed = {tt: TaskDetails(solution.schedule[tt]["start_time"],
+                #                              solution.schedule[tt]["end_time"],
+                #                              resource_units_used=list(solution.employee_usage.get(tt, {}).keys()))
+                #              for tt in finished}
+                completed = {tt: TaskDetails(observation.tasks_details[tt].start,
+                                             observation.tasks_details[tt].end,
+                                             resource_units_used=list(observation.tasks_details[tt].resources.keys()))
+                             for tt in finished}
+                # ongoing = {tt: TaskDetails(solution.schedule[tt]["start_time"],
+                #                            solution.schedule[tt]["end_time"],
+                #                            resource_units_used=list(solution.employee_usage.get(tt, {}).keys()))
+                #            for tt in observation.tasks_ongoing}
 
-            schedule = solution.rcpsp_schedule
+                ongoing = {tt: TaskDetails(observation.tasks_details[tt].start,
+                                           observation.tasks_details[tt].start + observation.tasks_details[tt].sampled_duration,
+                                           resource_units_used=list(observation.resource_used_for_task[tt].keys()))
+                           for tt in observation.tasks_ongoing}
+
+                solution.run_sgs_partial(current_t=t,
+                                         completed_tasks=completed,
+                                         scheduled_tasks_start_times=ongoing)
+                schedule = solution.schedule
+                resource_allocation = solution.employee_usage
+                # resource_allocation_priority = {j + 2: solution.priority_worker_per_task[j] for j in
+                #                                 range(len(solution.priority_worker_per_task))}
+
+            # elif isinstance(self.domain, MRCPSP):
+            elif isinstance(self.domain, WithoutResourceSkills):
+                solution = RCPSPSolution(problem=do_model,
+                                         rcpsp_permutation=normalized_values_for_do,
+                                         rcpsp_modes=modes,
+                                         )
+                solution.generate_schedule_from_permutation_serial_sgs_2(current_t=t,
+                                                                         completed_tasks=
+                                                                         {j: observation.tasks_details[j]
+                                                                          for j in observation.tasks_complete},
+                                                                         scheduled_tasks_start_times=scheduled_tasks_start_times)
+                schedule = solution.rcpsp_schedule
+                resource_allocation = None
+                # resource_allocation_priority = None
+
+            # solution = RCPSPSolution(problem=do_model,
+            #                          rcpsp_permutation=normalized_values_for_do,
+            #                          rcpsp_modes=modes,
+            #                          )
+
+
+
+
         else:
             schedule = None
+
+        # sgs_policy = PolicyRCPSP(domain=self.domain,
+        #                          schedule=schedule,
+        #                          policy_method_params=PolicyMethodParams(
+        #                              # base_policy_method=BasePolicyMethod.SGS_PRECEDENCE,
+        #                              # base_policy_method=BasePolicyMethod.SGS_READY,
+        #                              base_policy_method=BasePolicyMethod.FOLLOW_GANTT,
+        #                              # delta_index_freedom=self.params_gphh.delta_index_freedom,
+        #                              # delta_time_freedom=self.params_gphh.delta_time_freedom
+        #                          ),
+        #                          permutation_task=normalized_values,
+        #                          modes_dictionnary=modes_dictionnary)
 
         sgs_policy = PolicyRCPSP(domain=self.domain,
                                  schedule=schedule,
                                  policy_method_params=PolicyMethodParams(
-                                     # base_policy_method=BasePolicyMethod.SGS_PRECEDENCE,
-                                     # base_policy_method=BasePolicyMethod.SGS_READY,
-                                     base_policy_method=BasePolicyMethod.FOLLOW_GANTT,
-                                     # delta_index_freedom=self.params_gphh.delta_index_freedom,
-                                     # delta_time_freedom=self.params_gphh.delta_time_freedom
-                                 ),
+                                     base_policy_method=BasePolicyMethod.FOLLOW_GANTT),
                                  permutation_task=normalized_values,
-                                 modes_dictionnary=modes_dictionnary)
+                                 modes_dictionnary=modes_dictionnary,
+                                 resource_allocation=resource_allocation
+                                 )
         action: SchedulingAction = sgs_policy.sample_action(observation)
         # print('action_2: ', action.action)
         return action

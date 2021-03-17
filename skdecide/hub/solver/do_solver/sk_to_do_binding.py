@@ -5,9 +5,13 @@ from skdecide.builders.scheduling.scheduling_domains import SchedulingDomain, \
     MultiModeMultiSkillRCPSPCalendar, MultiModeMultiSkillRCPSP, MultiModeRCPSPWithCost, State
 from skdecide.hub.domain.rcpsp.rcpsp_sk import RCPSP, MRCPSP, MSRCPSP, MRCPSPCalendar, MSRCPSPCalendar, RCPSPCalendar, SingleModeRCPSP_Stochastic_Durations
 from skdecide.solvers import Solver, DeterministicPolicies
-from skdecide.builders.discrete_optimization.rcpsp.rcpsp_model import RCPSPModel, SingleModeRCPSPModel, \
+# from skdecide.builders.discrete_optimization.rcpsp.rcpsp_model import RCPSPModel, SingleModeRCPSPModel, \
+#     MultiModeRCPSPModel, RCPSPModelCalendar, RCPSPSolution
+from discrete_optimization.rcpsp.rcpsp_model import RCPSPModel, SingleModeRCPSPModel, \
     MultiModeRCPSPModel, RCPSPModelCalendar, RCPSPSolution
-from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPModel, MS_RCPSPModel_Variant, Employee, \
+# from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPModel, MS_RCPSPModel_Variant, Employee, \
+#     SkillDetail
+from discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPModel, MS_RCPSPModel_Variant, Employee, \
     SkillDetail
 
 
@@ -130,14 +134,13 @@ def build_do_domain(scheduling_domain: Union[SingleModeRCPSP,
         employees_dict = {}
         employees = scheduling_domain.get_resource_units_names()
         sorted_employees = sorted(employees)
-        # print(sorted_employees)
         for employee, i in zip(sorted_employees, range(len(sorted_employees))):
             skills = scheduling_domain.get_skills_of_resource(resource=employee)
             skills_details = {r: SkillDetail(skill_value=skills[r],
                                              efficiency_ratio=0,
                                              experience=0)
                               for r in skills}
-            employees_dict[i] = Employee(dict_skill=skills_details,
+            employees_dict[employee] = Employee(dict_skill=skills_details,
                                          calendar_employee=[bool(scheduling_domain.get_quantity_resource(employee,
                                                                                                          time=t))
                                                             for t in range(horizon+1)])

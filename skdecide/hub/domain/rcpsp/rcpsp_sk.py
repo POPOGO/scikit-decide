@@ -676,10 +676,12 @@ def build_n_determinist_from_stochastic_ms(srcpsp: SMSRCPSP, nb_instance: int):
                                          modes[task][mode].get_resource_need_at_time(r, 0)
                                          for r in modes[task][mode].get_ressource_names()}
                            for mode in modes[task]} for task in modes}
-        for t in modes_for_rcpsp:
-            for m in modes_for_rcpsp[t]:
+        for t in modes_for_rcpsp.keys():
+            for m in modes_for_rcpsp[t].keys():
                 duration = srcpsp.sample_task_duration(task=t, mode=m)
                 modes_for_rcpsp[t][m]["duration"] = duration
+                for q in [key for key in srcpsp.tasks_mode[t][m].keys() if key != "duration"]:
+                    modes_for_rcpsp[t][m][q] = srcpsp.tasks_mode[t][m][q]
 
         # resource_availability_dict = {}
         # for r in srcpsp.get_resource_types_names():

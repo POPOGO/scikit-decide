@@ -11,10 +11,15 @@ from skdecide.builders.scheduling.scheduling_domains_modelling import State
 from skdecide.hub.solver.sgs_policies.sgs_policies import PolicyRCPSP, PolicyMethodParams, BasePolicyMethod
 from skdecide.solvers import Solver, DeterministicPolicies
 from skdecide.hub.solver.do_solver.sk_to_do_binding import build_do_domain
-from skdecide.builders.discrete_optimization.rcpsp.rcpsp_model import RCPSPModel, SingleModeRCPSPModel, \
+from discrete_optimization.rcpsp.rcpsp_model import RCPSPModel, SingleModeRCPSPModel, \
     MultiModeRCPSPModel, RCPSPModelCalendar, RCPSPSolution
-from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPModel, MS_RCPSPModel_Variant,\
+# from skdecide.builders.discrete_optimization.rcpsp.rcpsp_model import RCPSPModel, SingleModeRCPSPModel, \
+#     MultiModeRCPSPModel, RCPSPModelCalendar, RCPSPSolution
+from discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPModel, MS_RCPSPModel_Variant,\
     MS_RCPSPSolution_Variant, MS_RCPSPSolution
+# from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill import MS_RCPSPModel, MS_RCPSPModel_Variant,\
+#     MS_RCPSPSolution_Variant, MS_RCPSPSolution
+from discrete_optimization.rcpsp_multiskill.solvers.lns_post_process_rcpsp import sgs_variant, build_aggreg_function_and_params_objective
 
 
 from enum import Enum
@@ -37,8 +42,11 @@ class SolvingMethod(Enum):
 
 
 def build_solver(solving_method: SolvingMethod, do_domain):
+    print('do_domain: ', do_domain)
+    print('type: ', type(do_domain))
     if isinstance(do_domain, (RCPSPModelCalendar, RCPSPModel, MultiModeRCPSPModel)):
-        from skdecide.builders.discrete_optimization.rcpsp.rcpsp_solvers import look_for_solver, solvers_map
+        # from skdecide.builders.discrete_optimization.rcpsp.rcpsp_solvers import look_for_solver, solvers_map
+        from discrete_optimization.rcpsp.rcpsp_solvers import look_for_solver, solvers_map
         available = look_for_solver(do_domain)
         solving_method_to_str = {SolvingMethod.PILE: "greedy",
                                  SolvingMethod.GA: "ga",
@@ -53,8 +61,9 @@ def build_solver(solving_method: SolvingMethod, do_domain):
                 if solvers_map[av][0] == solving_method_to_str[solving_method]]
         if len(smap) > 0:
             return smap[0]
-    if isinstance(do_domain, (MS_RCPSPModel, MS_RCPSPModel, MultiModeRCPSPModel)):
-        from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill_solvers import look_for_solver, solvers_map
+    if isinstance(do_domain, (MS_RCPSPModel, MS_RCPSPModel, MultiModeRCPSPModel, MS_RCPSPModel_Variant)):
+        # from skdecide.builders.discrete_optimization.rcpsp_multiskill.rcpsp_multiskill_solvers import look_for_solver, solvers_map
+        from discrete_optimization.rcpsp_multiskill.rcpsp_multiskill_solvers import look_for_solver, solvers_map
         available = look_for_solver(do_domain)
         solving_method_to_str = {SolvingMethod.PILE: "greedy",
                                  SolvingMethod.GA: "ga",
@@ -97,7 +106,7 @@ def from_solution_to_policy(solution: Union[RCPSPSolution,
                                   key=lambda x: (solution.schedule[x]["start_time"], x))
         schedule = solution.schedule
         employees = sorted(domain.get_resource_units_names())
-        resource_allocation = {task: [employees[i] for i in solution.employee_usage[task].keys()] # warning here...
+        resource_allocation = {task: [i for i in solution.employee_usage[task].keys()] # warning here...
                                for task in solution.employee_usage}
         modes_dictionnary = solution.modes
     if isinstance(solution, MS_RCPSPSolution_Variant):
@@ -110,7 +119,7 @@ def from_solution_to_policy(solution: Union[RCPSPSolution,
         for i in range(len(solution.modes_vector)):
             modes_dictionnary[i + 2] = solution.modes_vector[i]
         employees = sorted(domain.get_resource_units_names())
-        resource_allocation = {task: [employees[i] for i in solution.employee_usage[task].keys()]  # warning here...
+        resource_allocation = {task: [i for i in solution.employee_usage[task].keys()]  # warning here...
                                for task in solution.employee_usage}
     return PolicyRCPSP(domain=domain,
                        policy_method_params=policy_method_params,
@@ -185,4 +194,21 @@ class DOSolver(Solver, DeterministicPolicies):
     def _is_policy_defined_for(self, observation: D.T_agent[D.T_observation]) -> bool:
         return self.policy_object.is_policy_defined_for(observation=observation)
 
+    def left_shift_best_solution(self):
+        aggreg_from_sol, aggreg_dict, params_objective_function = \
+            build_aggreg_function_and_params_objective(problem=self.do_domain,
+                                                       params_objective_function=
+                                                       None)
+        graph = self.do_domain.compute_graph()
+        immediate_predecessors = {n: graph.get_predecessors(n)
+                                  for n in graph.nodes_name}
+        new_solution = sgs_variant(solution=self.best_solution,
+                                   problem=self.do_domain,
+                                   predecessors_dict=immediate_predecessors)
+        corrected_fit = aggreg_from_sol(new_solution)
+        print('left_shifted_fit: ', corrected_fit)
+        self.best_solution = new_solution
+        self.policy_object = from_solution_to_policy(solution=new_solution,
+                                                       domain=self.domain,
+                                                       policy_method_params=self.policy_method_params)
 
