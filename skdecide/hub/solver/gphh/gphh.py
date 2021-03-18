@@ -157,6 +157,10 @@ def feature_lfd(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, **kwargs):
     return cpm[task_id]._LFD/cpm_esd
 
 
+def get_dummy(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, increase: int, **kwargs):
+    """ Will only work if you store cpm results into the object. dirty trick"""
+    return increase
+
 class D(SchedulingDomain, SingleMode):
     pass
 
@@ -177,7 +181,7 @@ class FeatureEnum(Enum):
     LATEST_START_DATE = "LSD"
     EARLIEST_FINISH_DATE = "EFD"
     LATEST_FINISH_DATE = "LFD"
-
+    DUMMY = "DUMMY"
 
 feature_function_map = {FeatureEnum.TASK_DURATION: feature_task_duration,
                         FeatureEnum.RESSOURCE_TOTAL: feature_total_n_res,
@@ -193,7 +197,8 @@ feature_function_map = {FeatureEnum.TASK_DURATION: feature_task_duration,
                         FeatureEnum.EARLIEST_START_DATE: feature_esd,  #
                         FeatureEnum.EARLIEST_FINISH_DATE: feature_efd,  #
                         FeatureEnum.LATEST_START_DATE: feature_lsd,  #
-                        FeatureEnum.LATEST_FINISH_DATE: feature_lfd}  #
+                        FeatureEnum.LATEST_FINISH_DATE: feature_lfd,  #
+                        FeatureEnum.DUMMY: get_dummy}  #
 
 feature_static_map = {FeatureEnum.TASK_DURATION: True,
                         FeatureEnum.RESSOURCE_TOTAL: True,
@@ -209,7 +214,8 @@ feature_static_map = {FeatureEnum.TASK_DURATION: True,
                         FeatureEnum.EARLIEST_START_DATE: True,  #
                         FeatureEnum.EARLIEST_FINISH_DATE: True,  #
                         FeatureEnum.LATEST_START_DATE: True,  #
-                        FeatureEnum.LATEST_FINISH_DATE: True}  #
+                        FeatureEnum.LATEST_FINISH_DATE: True,  #
+                        FeatureEnum.DUMMY: False}  #
 
 
 class EvaluationGPHH(Enum):
@@ -292,8 +298,8 @@ class ParametersGPHH:
 
             set_primitves=pset,
             tournament_ratio=0.1,
-            pop_size=40,
-            n_gen=100,
+            pop_size=10,
+            n_gen=2,
             min_tree_depth=1,
             max_tree_depth=4,
             crossover_rate=0.7,
@@ -460,6 +466,7 @@ class GPHH(Solver, DeterministicPolicies):
         #                         FeatureEnum.N_SUCCESSORS,
         #                         FeatureEnum.RESSOURCE_AVG}
         self.list_feature = list(self.set_feature)
+        self.list_feature_names = [value.value for value in list(self.list_feature)]
         self.verbose = verbose
         self.pset = self.init_primitives(self.params_gphh.set_primitves)
         self.weight = weight
@@ -619,7 +626,8 @@ class GPHH(Solver, DeterministicPolicies):
                                                            cpm=cpm,
                                                            cpm_esd=cpm_esd,
                                                            task_id=task_id,
-                                                           state=initial_state)
+                                                           state=initial_state,
+                                                           increase=1)
                                   for lf in self.list_feature]
                 output_value = func_heuristic(*input_features)
                 raw_values.append(output_value)
