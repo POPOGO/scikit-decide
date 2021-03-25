@@ -330,8 +330,15 @@ def feature_max_successor_proportion_skills_needs(domain: SchedulingDomain, cpm,
     else:
         return 0.
 
+def get_dummy(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, increase: int, **kwargs):
+    """ Will only work if you store cpm results into the object. dirty trick"""
+    return increase
+
 class D(SchedulingDomain, SingleMode):
     pass
+
+
+
 
 
 class FeatureEnum(Enum):
@@ -366,6 +373,7 @@ class FeatureEnum(Enum):
     MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS = "MAX_SUCCESSORS_SUM_SKILLS"
     MAX_SUCCESSORS_SKILL_NEED_PROPORTION = "MAX_SUCCESSORS_SKILL_NEED_PROPORTION"
 
+    DUMMY = "DUMMY"
 
 feature_function_map = {FeatureEnum.TASK_DURATION: feature_task_duration,
                         FeatureEnum.RESSOURCE_TOTAL: feature_total_n_res,
@@ -395,8 +403,8 @@ feature_function_map = {FeatureEnum.TASK_DURATION: feature_task_duration,
                         FeatureEnum.MEAN_SUCCESSORS_SKILL_NEED_PROPORTION: feature_mean_successor_proportion_skills_needs,
                         FeatureEnum.MEAN_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: feature_mean_successor_sum_skills_needs,
                         FeatureEnum.MAX_SUCCESSORS_SKILL_NEED_PROPORTION: feature_max_successor_proportion_skills_needs,
-                        FeatureEnum.MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: feature_max_successor_sum_skills_needs,
-                        }  #
+                        FeatureEnum.MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: feature_max_successor_sum_skills_needs,#
+                        FeatureEnum.DUMMY: get_dummy}#
 
 feature_static_map = {FeatureEnum.TASK_DURATION: True,
                         FeatureEnum.RESSOURCE_TOTAL: True,
@@ -427,6 +435,7 @@ feature_static_map = {FeatureEnum.TASK_DURATION: True,
                         FeatureEnum.MEAN_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: True,
                         FeatureEnum.MAX_SUCCESSORS_SKILL_NEED_PROPORTION: True,
                         FeatureEnum.MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: True,
+                        FeatureEnum.DUMMY: False
                       }
 
 
@@ -717,6 +726,7 @@ class GPHH(Solver, DeterministicPolicies):
         self.params_gphh = params_gphh
         self.set_feature = self.params_gphh.set_feature
         self.list_feature = list(self.set_feature)
+        self.list_feature_names = [value.value for value in list(self.list_feature)]
         self.verbose = verbose
         self.pset = self.init_primitives(self.params_gphh.set_primitves)
         self.weight = weight
@@ -910,7 +920,8 @@ class GPHH(Solver, DeterministicPolicies):
                                                            cpm=cpm,
                                                            cpm_esd=cpm_esd,
                                                            task_id=task_id,
-                                                           state=initial_state)
+                                                           state=initial_state,
+                                                           increase=1)
                                   for lf in self.list_feature]
                 output_value = func_heuristic(*input_features)
                 raw_values.append(output_value)
