@@ -9,7 +9,7 @@ from skdecide.builders.scheduling.scheduling_domains import SingleModeRCPSP, Sin
     SchedulingObjectiveEnum, SingleModeRCPSP_Stochastic_Durations, \
     SingleModeRCPSP_Stochastic_Durations_WithConditionalTasks, \
     SingleModeRCPSP_Simulated_Stochastic_Durations_WithConditionalTasks, \
-    MultiModeRCPSPWithCost, MultiModeMultiSkillRCPSPCalendar, MultiModeMultiSkillRCPSP, State, SchedulingAction
+    MultiModeRCPSPWithCost, MultiModeMultiSkillRCPSPCalendar, MultiModeMultiSkillRCPSP, State, SchedulingAction, MultiModeMultiSkillRCPSP_Stochastic_Durations
 from skdecide import Domain, Space, TransitionValue, Distribution, TransitionOutcome, ImplicitSpace, DiscreteDistribution
 
 from skdecide.builders.scheduling.modes import SingleMode, MultiMode, ModeConsumption, ConstantModeConsumption
@@ -35,7 +35,8 @@ from skdecide.hub.solver.lazy_astar import lazy_astar
 from skdecide.hub.solver.do_solver.do_solver_scheduling import PolicyRCPSP, DOSolver, \
     PolicyMethodParams, BasePolicyMethod, SolvingMethod
 from skdecide.hub.solver.lazy_astar import LazyAstar
-from skdecide.hub.solver.gphh.gphh import GPHH, ParametersGPHH
+from skdecide.hub.solver.gphh.gphh_po import GPHH, ParametersGPHH
+from skdecide.hub.domain.rcpsp.rcpsp_sk import build_stochastic_from_deterministic_ms, build_n_determinist_from_stochastic_ms, SMSRCPSP
 
 optimal_solutions = {
     'ToyRCPSPDomain': {'makespan': 10},
@@ -209,6 +210,87 @@ class ToyMS_RCPSPDomain(MultiModeMultiSkillRCPSP):
             2: {1: ConstantModeConsumption({'r1': 1, 'r2': 1}), 2: ConstantModeConsumption({'r1': 2, 'r2': 0})},
             3: {1: ConstantModeConsumption({'r1': 1, 'r2': 0}), 2: ConstantModeConsumption({'r1': 0, 'r2': 1})},
             4: {1: ConstantModeConsumption({'r1': 2, 'r2': 1}), 2: ConstantModeConsumption({'r1': 2, 'r2': 0})},
+            5: {1: ConstantModeConsumption({'r1': 0, 'r2': 0})}
+        }
+
+    def _get_task_duration(self, task: int, mode: Optional[int] = 1, progress_from: Optional[float] = 0.) -> int:
+        all_durations = {1: 0, 2: 5, 3: 6, 4: 4, 5: 0}
+        return all_durations[task]
+
+    def _get_resource_types_names(self) -> List[str]:
+        return ["r1", "r2"]
+
+    def _get_resource_type_for_unit(self) -> Dict[str, str]:
+        return None
+
+    def _get_resource_renewability(self) -> Dict[str, bool]:
+        return {"r1": True,
+                "r2": True,
+                "employee-1": True,
+                "employee-2": True,
+                "employee-3": True}
+
+    def _get_all_resources_skills(self) -> Dict[str, Dict[str, Any]]:
+        return {"employee-1": {"S1": 1},
+                "employee-2": {"S2": 1},
+                "employee-3": {"S3": 1},
+                "r1": {},
+                "r2": {}}
+
+    def _get_all_tasks_skills(self) -> Dict[int, Dict[int, Dict[str, Any]]]:
+        return {
+            1: {1: {}},
+            2: {1: {"S1": 1},
+                2: {"S2": 1}},
+            3: {1: {"S2": 1},
+                2: {"S3": 1}},
+            4: {1: {"S1": 1, "S2": 1},
+                2: {"S2": 1, "S3": 1}},
+            5: {1: {}}
+        }
+
+
+class ToySMS_RCPSPDomain(MultiModeMultiSkillRCPSP_Stochastic_Durations):
+    def _get_task_duration_distribution(self, task: int, mode: Optional[int] = 1,
+                                        progress_from: Optional[float] = 0.,
+                                        multivariate_settings: Optional[Dict[str, int]] = None) -> Distribution:
+        all_distributions = {}
+        all_distributions[1] = DiscreteDistribution([(0, 1.)])
+        all_distributions[2] = DiscreteDistribution([(4, 0.25), (5, 0.5), (6, 0.25)])
+        all_distributions[3] = DiscreteDistribution([(5, 0.25), (6, 0.5), (7, 0.25)])
+        all_distributions[4] = DiscreteDistribution([(3, 0.5), (4, 0.5)])
+        all_distributions[5] = DiscreteDistribution([(0, 1.)])
+
+        return all_distributions[task]
+
+    def __init__(self):
+        self.initialize_domain()
+
+    def _get_resource_units_names(self) -> List[str]:
+        return ["employee-1", "employee-2", "employee-3"]
+
+    def _get_fixed_quantity_resource(self, resource: str, **kwargs) -> int:
+        all_resource_quantities = {'r1': 2, 'r2': 1, "employee-1": 1, "employee-2": 1, "employee-3": 1}
+        return all_resource_quantities[resource]
+
+    def _get_max_horizon(self) -> int:
+        return 50
+
+    def _get_objectives(self) -> List[SchedulingObjectiveEnum]:
+        return [SchedulingObjectiveEnum.MAKESPAN]
+
+    def _get_successors(self) -> Dict[int, List[int]]:
+        return {1: [2, 3], 2: [4], 3: [5], 4: [5], 5: []}
+
+    def _get_tasks_ids(self) -> Union[Set[int], Dict[int, Any], List[int]]:
+        return {1, 2, 3, 4, 5}
+
+    def _get_tasks_modes(self) -> Dict[int, Dict[int, ModeConsumption]]:
+        return {
+            1: {1: ConstantModeConsumption({'r1': 0, 'r2': 0})},
+            2: {1: ConstantModeConsumption({'r1': 1, 'r2': 1})},
+            3: {1: ConstantModeConsumption({'r1': 1, 'r2': 0})},
+            4: {1: ConstantModeConsumption({'r1': 2, 'r2': 1})},
             5: {1: ConstantModeConsumption({'r1': 0, 'r2': 0})}
         }
 
@@ -495,7 +577,9 @@ def check_task_duration(domain, states: List[State]):
             if id in states[-1].tasks_complete:  # needed for conditional tasks
                 expected_duration = states[-1].tasks_details[id].sampled_duration
                 actual_duration = states[-1].tasks_details[id].end - states[-1].tasks_details[id].start
-
+                # print('id: ', id)
+                # print('actual_duration: ', actual_duration)
+                # print('expected_duration: ', expected_duration)
 
                 assert actual_duration == expected_duration, 'duration different than expected for task ' + str(id)
 
@@ -889,3 +973,38 @@ def test_cp_rcpsp_calendar(domain, do_solver):
                                               action_formatter=lambda o: str(o),
                                               outcome_formatter=lambda o: f'{o.observation} - cost: {o.value.cost:.2f}')
     check_rollout_consistency(domain, states)
+
+@pytest.mark.parametrize("domain", [
+    (ToySMS_RCPSPDomain())
+])
+def test_gphh_ms(domain):
+    # task_to_noise = set(random.sample(domain.get_tasks_ids(), len(domain.get_tasks_ids())))
+    # random.seed(1)
+    # stochastic_domain = build_stochastic_from_deterministic_ms(domain,
+    #                                                            task_to_noise=task_to_noise,
+    #                                                            noise_level=30)
+    deterministic_domains = build_n_determinist_from_stochastic_ms(domain,
+                                                                   nb_instance=1)
+    training_domains_gphh = deterministic_domains
+    training_domains_gphh_names = ['']
+
+    solver = GPHH(training_domains=training_domains_gphh,
+                  domain_model=training_domains_gphh[0],
+                  weight=-1,
+                  verbose=True,
+                  reference_permutations={},
+                  params_gphh=ParametersGPHH.ms_default(),
+                  training_domains_names=training_domains_gphh_names
+                  )
+
+    solver.solve(domain_factory=lambda: training_domains_gphh[0])
+    test_domain = deterministic_domains[0]
+    state = test_domain._get_initial_state_()
+    solver.set_domain(test_domain)
+    states, actions, values = rollout_episode(domain=test_domain,
+                                              max_steps=2000,
+                                              solver=solver,
+                                              from_memory=state,
+                                              verbose=False,
+                                              outcome_formatter=lambda
+                                                  o: f'{o.observation} - cost: {o.value.cost:.2f}')

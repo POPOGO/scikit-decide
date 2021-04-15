@@ -638,7 +638,7 @@ class MSRCPSPCalendar(D):
         return [SchedulingObjectiveEnum.MAKESPAN]
 
 
-def build_stochastic_from_deterministic_ms(rcpsp: MSRCPSP, task_to_noise: Set[int]=None):
+def build_stochastic_from_deterministic_ms(rcpsp: MSRCPSP, task_to_noise: Set[int]=None, noise_level: int=10):
     if task_to_noise is None:
         task_to_noise = set(rcpsp.get_tasks_ids())
     duration_distribution = {}
@@ -649,7 +649,7 @@ def build_stochastic_from_deterministic_ms(rcpsp: MSRCPSP, task_to_noise: Set[in
             if duration == 0 or task_id not in task_to_noise:
                 distrib = DiscreteDistribution(values=[(duration, 1)])
             else:
-                n = 10
+                n = noise_level
                 distrib = DiscreteDistribution(values=[(max(1, duration+i), 1/(2*n+1))
                                                        for i in range(-n, n+1)])
             duration_distribution[task_id][mode] = distrib
@@ -659,10 +659,10 @@ def build_stochastic_from_deterministic_ms(rcpsp: MSRCPSP, task_to_noise: Set[in
                     resource_type_names=rcpsp.get_resource_types_names(),
                     resource_skills = rcpsp.get_all_resources_skills(),
                             task_ids=rcpsp.get_tasks_ids(),
-                            tasks_mode=rcpsp.tasks_mode,  # ressource
+                            tasks_mode=rcpsp.get_tasks_modes(),  # ressource
                             duration_distribution=duration_distribution,
                             successors=rcpsp.successors,
-                            max_horizon=rcpsp.max_horizon*2,
+                            max_horizon=rcpsp.get_max_horizon()*2,
                             resource_availability=rcpsp.resource_availability,
                             resource_renewable=rcpsp.resource_renewable)
 
@@ -676,17 +676,27 @@ def build_n_determinist_from_stochastic_ms(srcpsp: SMSRCPSP, nb_instance: int):
                                          modes[task][mode].get_resource_need_at_time(r, 0)
                                          for r in modes[task][mode].get_ressource_names()}
                            for mode in modes[task]} for task in modes}
+
+        for t in srcpsp.get_tasks_ids():
+            for mode in modes_for_rcpsp[t]:
+                val = srcpsp.get_skills_of_task(t, mode)
+                for skill in val:
+                    modes_for_rcpsp[t][mode][skill] = val[skill]
+
         for t in modes_for_rcpsp.keys():
             for m in modes_for_rcpsp[t].keys():
                 duration = srcpsp.sample_task_duration(task=t, mode=m)
                 modes_for_rcpsp[t][m]["duration"] = duration
-                for q in [key for key in srcpsp.tasks_mode[t][m].keys() if key != "duration"]:
-                    modes_for_rcpsp[t][m][q] = srcpsp.tasks_mode[t][m][q]
+                # for q in [key for key in srcpsp.tasks_mode[t][m].keys() if key != "duration"]:
+                #     modes_for_rcpsp[t][m][q] = srcpsp.tasks_mode[t][m][q]
 
-        # resource_availability_dict = {}
-        # for r in srcpsp.get_resource_types_names():
-        #     resource_availability_dict[r] = srcpsp.get_original_quantity_resource(r)
+        resource_availability_dict = {}
+        for r in srcpsp.get_resource_types_names():
+            resource_availability_dict[r] = srcpsp.get_fixed_quantity_resource(r)
+        for r in srcpsp.get_resource_units_names():
+            resource_availability_dict[r] = srcpsp.get_fixed_quantity_resource(r)
 
+            # resource_availability_dict[r] = srcpsp.get_original_quantity_resource(r)
 
         instances += [MSRCPSP(skills_names = srcpsp.get_skills_names(),
                               resource_unit_names = srcpsp.get_resource_units_names(),
@@ -699,8 +709,8 @@ def build_n_determinist_from_stochastic_ms(srcpsp: SMSRCPSP, nb_instance: int):
                               successors=srcpsp.successors,
                              # max_horizon=srcpsp.max_horizon,
                              max_horizon=srcpsp.get_max_horizon(),
-                             resource_availability=srcpsp.resource_availability,
-                             # resource_availability=resource_availability_dict,
+                             # resource_availability=srcpsp.resource_availability,
+                             resource_availability=resource_availability_dict,
                              resource_renewable=srcpsp.get_resource_renewability()
                       # resource_renewable=srcpsp.resource_renewable
                              )]

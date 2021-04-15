@@ -299,11 +299,12 @@ def feature_max_proportion_skills_needs(domain: SchedulingDomain, cpm, cpm_esd, 
         for q2 in qs.keys():
             q_count[q2] = q_count[q2] + qs[q2]
 
-    for key in domain.tasks_mode[task_id][1].keys():
+    # for key in domain.tasks_mode[task_id][1].keys():
+    for key in q_count:
         # if (key != 'duration') and (domain.tasks_mode[task_id][1][key] > 0.):
         if key != 'duration':
             avail = float(q_count[key])
-            need = float(domain.tasks_mode[task_id][1][key])
+            need = float(domain.tasks_mode[task_id][1].get(key, 0))
             vals.append(need / avail)
     val = max(vals)
     return val
@@ -643,7 +644,7 @@ class ParametersGPHH:
             set_feature=set_feature,
             set_primitves=pset,
             tournament_ratio=0.1,
-            pop_size=10,
+            pop_size=40,
             n_gen=2,
             min_tree_depth=1,
             max_tree_depth=4,
@@ -750,6 +751,8 @@ class GPHH(Solver, DeterministicPolicies):
         creator.create("Individual", PrimitiveTree, fitness=creator.FitnessMin)
 
         self.toolbox = Toolbox()
+        random.seed(42)
+        gp.random.seed(42)
         self.toolbox.register("expr", genHalfAndHalf, pset=self.pset, min_=min_tree_depth, max_=max_tree_depth)
         self.toolbox.register("individual", tools.initIterate, creator.Individual, self.toolbox.expr)
         self.toolbox.register("population", tools.initRepeat, list, self.toolbox.individual)
@@ -1143,20 +1146,11 @@ class GPHHPolicy(DeterministicPolicies):
                                          )
 
                 finished = observation.tasks_complete
-                # finished = set(
-                #     [tt for tt in solution.schedule if solution.schedule[tt]["end_time"] <= t])
-                # completed = {tt: TaskDetails(solution.schedule[tt]["start_time"],
-                #                              solution.schedule[tt]["end_time"],
-                #                              resource_units_used=list(solution.employee_usage.get(tt, {}).keys()))
-                #              for tt in finished}
+
                 completed = {tt: TaskDetails(observation.tasks_details[tt].start,
                                              observation.tasks_details[tt].end,
                                              resource_units_used=list(observation.tasks_details[tt].resources.keys()))
                              for tt in finished}
-                # ongoing = {tt: TaskDetails(solution.schedule[tt]["start_time"],
-                #                            solution.schedule[tt]["end_time"],
-                #                            resource_units_used=list(solution.employee_usage.get(tt, {}).keys()))
-                #            for tt in observation.tasks_ongoing}
 
                 ongoing = {tt: TaskDetails(observation.tasks_details[tt].start,
                                            observation.tasks_details[tt].start + observation.tasks_details[
@@ -1169,10 +1163,7 @@ class GPHHPolicy(DeterministicPolicies):
                                          scheduled_tasks_start_times=ongoing)
                 schedule = solution.schedule
                 resource_allocation = solution.employee_usage
-                # resource_allocation_priority = {j + 2: solution.priority_worker_per_task[j] for j in
-                #                                 range(len(solution.priority_worker_per_task))}
 
-            # elif isinstance(self.domain, MRCPSP):
             elif isinstance(self.domain, WithoutResourceSkills):
                 solution = RCPSPSolution(problem=do_model,
                                          rcpsp_permutation=normalized_values_for_do,
@@ -1182,18 +1173,10 @@ class GPHHPolicy(DeterministicPolicies):
                                                                          completed_tasks=
                                                                          {j: observation.tasks_details[j]
                                                                           for j in observation.tasks_complete},
-                                                                         scheduled_tasks_start_times=scheduled_tasks_start_times)
+                                                                         scheduled_tasks_start_times=scheduled_tasks_start_times,
+                                                                         do_fast=True)
                 schedule = solution.rcpsp_schedule
                 resource_allocation = None
-                # resource_allocation_priority = None
-
-            # solution = RCPSPSolution(problem=do_model,
-            #                          rcpsp_permutation=normalized_values_for_do,
-            #                          rcpsp_modes=modes,
-            #                          )
-
-
-
 
         else:
             schedule = None
