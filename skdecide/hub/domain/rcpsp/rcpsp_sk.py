@@ -474,11 +474,11 @@ class SMSRCPSP(D):
         self.task_mode_dict = {}
         self.task_skills_dict = {}
         self.duration_distribution = duration_distribution
-        self.duration_dict = {}
+        # self.duration_dict = {}
         for task in self.tasks_mode:
             self.task_mode_dict[task] = {}
             self.task_skills_dict[task] = {}
-            self.duration_dict[task] = {}
+            # self.duration_dict[task] = {}
             for mode in self.tasks_mode[task]:
                 self.task_mode_dict[task][mode] = ConstantModeConsumption({})
                 self.task_skills_dict[task][mode] = {}
@@ -487,7 +487,7 @@ class SMSRCPSP(D):
                         self.task_mode_dict[task][mode].mode_details[r] = [self.tasks_mode[task][mode][r]]
                     if r in self.skills_set:
                         self.task_skills_dict[task][mode][r] = self.tasks_mode[task][mode][r]
-                self.duration_dict[task][mode] = self.tasks_mode[task][mode]["duration"]
+                # self.duration_dict[task][mode] = self.tasks_mode[task][mode]["duration"]
         self.successors = successors
         self.max_horizon = max_horizon
         self.resource_availability = resource_availability
@@ -654,17 +654,43 @@ def build_stochastic_from_deterministic_ms(rcpsp: MSRCPSP, task_to_noise: Set[in
                                                        for i in range(-n, n+1)])
             duration_distribution[task_id][mode] = distrib
 
+    modes = rcpsp.get_tasks_modes()
+    modes_for_rcpsp = {task: {mode: {r:
+                                         modes[task][mode].get_resource_need_at_time(r, 0)
+                                     for r in modes[task][mode].get_ressource_names()}
+                              for mode in modes[task]} for task in modes}
+
+    for t in rcpsp.get_tasks_ids():
+        for mode in modes_for_rcpsp[t]:
+            val = rcpsp.get_skills_of_task(t, mode)
+            for skill in val:
+                modes_for_rcpsp[t][mode][skill] = val[skill]
+
+    # for t in modes_for_rcpsp.keys():
+    #     for m in modes_for_rcpsp[t].keys():
+    #         duration = rcpsp.sample_task_duration(task=t, mode=m)
+    #         modes_for_rcpsp[t][m]["duration"] = duration
+
+
+
+    resource_availability_dict = {}
+    for r in rcpsp.get_resource_types_names():
+        resource_availability_dict[r] = rcpsp.get_fixed_quantity_resource(r)
+    for r in rcpsp.get_resource_units_names():
+        resource_availability_dict[r] = rcpsp.get_fixed_quantity_resource(r)
+
     return SMSRCPSP(skills_names=rcpsp.get_skills_names(),
                     resource_unit_names = rcpsp.get_resource_units_names(),
                     resource_type_names=rcpsp.get_resource_types_names(),
                     resource_skills = rcpsp.get_all_resources_skills(),
                             task_ids=rcpsp.get_tasks_ids(),
-                            tasks_mode=rcpsp.get_tasks_modes(),  # ressource
+                            # tasks_mode=rcpsp.get_tasks_modes(),  # ressource
+                            tasks_mode=modes_for_rcpsp,  # ressource
                             duration_distribution=duration_distribution,
                             successors=rcpsp.successors,
                             max_horizon=rcpsp.get_max_horizon()*2,
-                            resource_availability=rcpsp.resource_availability,
-                            resource_renewable=rcpsp.resource_renewable)
+                            resource_availability=resource_availability_dict,
+                            resource_renewable=rcpsp.get_resource_renewability())
 
 
 def build_n_determinist_from_stochastic_ms(srcpsp: SMSRCPSP, nb_instance: int):

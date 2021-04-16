@@ -1076,7 +1076,8 @@ class GPHHPolicy(DeterministicPolicies):
             for j in observation.tasks_details.keys():
                 for res in do_model.resources_list:
                     do_model.mode_details[j][1][res] = self.domain.get_task_modes(j)[1].get_resource_need_at_time(res, 0)
-                if observation.tasks_details[j].start is not None:
+                # if observation.tasks_details[j].start is not None:
+                if j in observation.tasks_ongoing:
                     scheduled_tasks_start_times[j] = observation.tasks_details[j].start
                     do_model.mode_details[j][1]['duration'] = observation.tasks_details[j].sampled_duration
 
