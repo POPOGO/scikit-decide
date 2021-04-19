@@ -356,6 +356,49 @@ class ParametersGPHH:
             permutation_distance=PermutationDistance.KTD)
 
     @staticmethod
+    def ms_fast():
+        set_feature = {FeatureEnum.EARLIEST_FINISH_DATE,
+                       FeatureEnum.EARLIEST_START_DATE,
+                       FeatureEnum.LATEST_FINISH_DATE,
+                       FeatureEnum.LATEST_START_DATE,
+                       FeatureEnum.N_PREDECESSORS,
+                       FeatureEnum.N_SUCCESSORS,
+                       FeatureEnum.ALL_DESCENDANTS,
+                       # FeatureEnum.RESSOURCE_REQUIRED,
+                       # FeatureEnum.RESSOURCE_AVG,
+                       # FeatureEnum.RESSOURCE_MAX,
+                       # # FeatureEnum.RESSOURCE_MIN
+                       # FeatureEnum.RESSOURCE_NZ_MIN
+                       }
+
+        pset = PrimitiveSet("main", len(set_feature))
+        pset.addPrimitive(operator.add, 2)
+        pset.addPrimitive(operator.sub, 2)
+        pset.addPrimitive(operator.mul, 2)
+        pset.addPrimitive(protected_div, 2)
+        pset.addPrimitive(max_operator, 2)
+        pset.addPrimitive(min_operator, 2)
+        pset.addPrimitive(operator.neg, 1)
+
+        return ParametersGPHH(
+            set_feature=set_feature,
+            set_primitves=pset,
+            tournament_ratio=0.1,
+            pop_size=4,
+            n_gen=2,
+            min_tree_depth=1,
+            max_tree_depth=4,
+            crossover_rate=0.7,
+            mutation_rate=0.3,
+            base_policy_method=BasePolicyMethod.FOLLOW_GANTT,
+            delta_index_freedom=0,
+            delta_time_freedom=0,
+            deap_verbose=True,
+            evaluation=EvaluationGPHH.SGS,
+            # evaluation=EvaluationGPHH.PERMUTATION_DISTANCE,
+            permutation_distance=PermutationDistance.KTD)
+
+    @staticmethod
     def ms_default():
         set_feature = {FeatureEnum.EARLIEST_FINISH_DATE,
                        FeatureEnum.EARLIEST_START_DATE,
@@ -384,8 +427,8 @@ class ParametersGPHH:
             set_feature=set_feature,
             set_primitves=pset,
             tournament_ratio=0.1,
-            pop_size=10,
-            n_gen=2,
+            pop_size=40,
+            n_gen=100,
             min_tree_depth=1,
             max_tree_depth=4,
             crossover_rate=0.7,
@@ -795,7 +838,7 @@ class GPHHPolicy(DeterministicPolicies):
         # do_model.resources_list = self.domain.get_resource_types_names()
         # do_model.resources = self.domain.get_resource
         # TODO: Need to make sure do_domain is defined in a coherent way (i.e. all info from execution domain except uncertain information only)
-        
+
         modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
         modes = modes[1:-1]
 

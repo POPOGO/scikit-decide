@@ -33,16 +33,13 @@ from deap import creator
 from deap import tools
 
 import operator
-import itertools
 import numpy as np
 import random
-from scipy import stats
-from scipy.spatial import distance
 import logging
-
 
 logger = logging.getLogger('skdecide.gphh_po')
 logger.setLevel(logging.INFO)
+
 
 def if_then_else(input, output1, output2):
     if input: return output1
@@ -98,7 +95,6 @@ def get_resource_requirements_across_duration(domain: SchedulingDomain, task_id:
             values.append(tmp/duration)
     else:
         values = [0.]
-    # print(task_id,':', values)
     return values
 
 
@@ -331,15 +327,14 @@ def feature_max_successor_proportion_skills_needs(domain: SchedulingDomain, cpm,
     else:
         return 0.
 
+
 def get_dummy(domain: SchedulingDomain, cpm, cpm_esd, task_id: int, increase: int, **kwargs):
     """ Will only work if you store cpm results into the object. dirty trick"""
     return increase
 
+
 class D(SchedulingDomain, SingleMode):
     pass
-
-
-
 
 
 class FeatureEnum(Enum):
@@ -376,21 +371,22 @@ class FeatureEnum(Enum):
 
     DUMMY = "DUMMY"
 
+
 feature_function_map = {FeatureEnum.TASK_DURATION: feature_task_duration,
                         FeatureEnum.RESSOURCE_TOTAL: feature_total_n_res,
                         FeatureEnum.N_SUCCESSORS: feature_n_successors,
-                        FeatureEnum.N_PREDECESSORS: feature_n_predecessors, #
-                        FeatureEnum.RESSOURCE_REQUIRED: feature_resource_requirements, #
-                        FeatureEnum.RESSOURCE_AVG: feature_average_resource_requirements, #
-                        FeatureEnum.RESSOURCE_MIN: feature_minimum_resource_requirements, #
-                        FeatureEnum.RESSOURCE_NZ_MIN: feature_non_zero_minimum_resource_requirements,  #
-                        FeatureEnum.RESSOURCE_MAX: feature_maximum_resource_requirements, #
-                        FeatureEnum.ALL_DESCENDANTS: feature_all_descendants, #
+                        FeatureEnum.N_PREDECESSORS: feature_n_predecessors,
+                        FeatureEnum.RESSOURCE_REQUIRED: feature_resource_requirements,
+                        FeatureEnum.RESSOURCE_AVG: feature_average_resource_requirements,
+                        FeatureEnum.RESSOURCE_MIN: feature_minimum_resource_requirements,
+                        FeatureEnum.RESSOURCE_NZ_MIN: feature_non_zero_minimum_resource_requirements,
+                        FeatureEnum.RESSOURCE_MAX: feature_maximum_resource_requirements,
+                        FeatureEnum.ALL_DESCENDANTS: feature_all_descendants,
                         FeatureEnum.PRECEDENCE_DONE: feature_precedence_done,
-                        FeatureEnum.EARLIEST_START_DATE: feature_esd,  #
-                        FeatureEnum.EARLIEST_FINISH_DATE: feature_efd,  #
-                        FeatureEnum.LATEST_START_DATE: feature_lsd,  #
-                        FeatureEnum.LATEST_FINISH_DATE: feature_lfd,  #
+                        FeatureEnum.EARLIEST_START_DATE: feature_esd,
+                        FeatureEnum.EARLIEST_FINISH_DATE: feature_efd,
+                        FeatureEnum.LATEST_START_DATE: feature_lsd,
+                        FeatureEnum.LATEST_FINISH_DATE: feature_lfd,
                         FeatureEnum.SUM_ALL_SKILLS_NEEDS: feature_sum_all_skills_needs,
                         FeatureEnum.MAX_SKILL_NEED_PROPORTION: feature_max_proportion_skills_needs,
                         FeatureEnum.MEAN_SUCCESSORS_EFD: feature_mean_successor_efd,
@@ -404,24 +400,24 @@ feature_function_map = {FeatureEnum.TASK_DURATION: feature_task_duration,
                         FeatureEnum.MEAN_SUCCESSORS_SKILL_NEED_PROPORTION: feature_mean_successor_proportion_skills_needs,
                         FeatureEnum.MEAN_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: feature_mean_successor_sum_skills_needs,
                         FeatureEnum.MAX_SUCCESSORS_SKILL_NEED_PROPORTION: feature_max_successor_proportion_skills_needs,
-                        FeatureEnum.MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: feature_max_successor_sum_skills_needs,#
-                        FeatureEnum.DUMMY: get_dummy}#
+                        FeatureEnum.MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS: feature_max_successor_sum_skills_needs,
+                        FeatureEnum.DUMMY: get_dummy}
 
 feature_static_map = {FeatureEnum.TASK_DURATION: True,
                         FeatureEnum.RESSOURCE_TOTAL: True,
                         FeatureEnum.N_SUCCESSORS: True,
-                        FeatureEnum.N_PREDECESSORS: True, #
-                        FeatureEnum.RESSOURCE_REQUIRED: True, #
-                        FeatureEnum.RESSOURCE_AVG: True, #
-                        FeatureEnum.RESSOURCE_MIN: True, #
-                        FeatureEnum.RESSOURCE_NZ_MIN: True, #
-                        FeatureEnum.RESSOURCE_MAX: True, #
-                        FeatureEnum.ALL_DESCENDANTS: True, #
+                        FeatureEnum.N_PREDECESSORS: True,
+                        FeatureEnum.RESSOURCE_REQUIRED: True,
+                        FeatureEnum.RESSOURCE_AVG: True,
+                        FeatureEnum.RESSOURCE_MIN: True,
+                        FeatureEnum.RESSOURCE_NZ_MIN: True,
+                        FeatureEnum.RESSOURCE_MAX: True,
+                        FeatureEnum.ALL_DESCENDANTS: True,
                         FeatureEnum.PRECEDENCE_DONE: False,
-                        FeatureEnum.EARLIEST_START_DATE: True,  #
-                        FeatureEnum.EARLIEST_FINISH_DATE: True,  #
-                        FeatureEnum.LATEST_START_DATE: True,  #
-                        FeatureEnum.LATEST_FINISH_DATE: True,  #
+                        FeatureEnum.EARLIEST_START_DATE: True,
+                        FeatureEnum.EARLIEST_FINISH_DATE: True,
+                        FeatureEnum.LATEST_START_DATE: True,
+                        FeatureEnum.LATEST_FINISH_DATE: True,
                         FeatureEnum.SUM_ALL_SKILLS_NEEDS: True,
                         FeatureEnum.MAX_SKILL_NEED_PROPORTION: True,
                         FeatureEnum.MEAN_SUCCESSORS_EFD: True,
@@ -440,22 +436,12 @@ feature_static_map = {FeatureEnum.TASK_DURATION: True,
                       }
 
 
-# class EvaluationGPHH(Enum):
-#     SGS = 0
-#     PERMUTATION_DISTANCE = 1
-#     # SGS_DEVIATION = 2
-#
-#
-# class PermutationDistance(Enum):
-#     KTD = 0
-#     HAMMING = 1
-#     KTD_HAMMING = 2
-
 class GPHH_Objectives(Enum):
     MAKESPAN = "MAKESPAN"
     COMPLEXITY_AGG = "COMPLEXITY_AGG"
     N_OPERATORS = "N_OPERATORS"
     N_FEATURES = "N_FEATURES"
+
 
 class ParametersGPHH:
     set_feature: Set[FeatureEnum] = None
@@ -599,6 +585,69 @@ class ParametersGPHH:
         )
 
     @staticmethod
+    def ms_fast():
+        set_feature = {FeatureEnum.EARLIEST_FINISH_DATE,
+                       FeatureEnum.EARLIEST_START_DATE,
+                       FeatureEnum.LATEST_FINISH_DATE,
+                       FeatureEnum.LATEST_START_DATE,
+                       FeatureEnum.N_PREDECESSORS,
+                       FeatureEnum.N_SUCCESSORS,
+                       FeatureEnum.ALL_DESCENDANTS,
+                       FeatureEnum.MEAN_SUCCESSORS_EFD,
+                       FeatureEnum.MEAN_SUCCESSORS_LFD,
+                       FeatureEnum.MEAN_SUCCESSORS_ESD,
+                       FeatureEnum.MEAN_SUCCESSORS_LSD,
+                       FeatureEnum.MAX_SUCCESSORS_EFD,
+                       FeatureEnum.MAX_SUCCESSORS_LFD,
+                       FeatureEnum.MAX_SUCCESSORS_ESD,
+                       FeatureEnum.MAX_SUCCESSORS_LSD,
+                       FeatureEnum.SUM_ALL_SKILLS_NEEDS,
+                       FeatureEnum.MAX_SKILL_NEED_PROPORTION,
+                       FeatureEnum.MEAN_SUCCESSORS_SKILL_NEED_PROPORTION,
+                       FeatureEnum.MEAN_SUCCESSORS_SUM_ALL_SKILLS_NEEDS,
+                       FeatureEnum.MAX_SUCCESSORS_SKILL_NEED_PROPORTION,
+                       FeatureEnum.MAX_SUCCESSORS_SUM_ALL_SKILLS_NEEDS,
+                       # FeatureEnum.RESSOURCE_REQUIRED,
+                       # FeatureEnum.RESSOURCE_AVG,
+                       # FeatureEnum.RESSOURCE_MAX,
+                       # # FeatureEnum.RESSOURCE_MIN
+                       # FeatureEnum.RESSOURCE_NZ_MIN
+                       }
+
+        pset = PrimitiveSet("main", len(set_feature))
+        pset.addPrimitive(operator.add, 2)
+        pset.addPrimitive(operator.sub, 2)
+        pset.addPrimitive(operator.mul, 2)
+        pset.addPrimitive(protected_div, 2)
+        pset.addPrimitive(max_operator, 2)
+        pset.addPrimitive(min_operator, 2)
+        pset.addPrimitive(operator.neg, 1)
+
+        objectives = [GPHH_Objectives.MAKESPAN, GPHH_Objectives.COMPLEXITY_AGG]
+        objective_weights = [-1., -1.]
+
+        return ParametersGPHH(
+            set_feature=set_feature,
+            set_primitves=pset,
+            tournament_ratio=0.1,
+            pop_size=4,
+            n_gen=2,
+            min_tree_depth=1,
+            max_tree_depth=4,
+            crossover_rate=0.7,
+            mutation_rate=0.3,
+            base_policy_method=BasePolicyMethod.FOLLOW_GANTT,
+            delta_index_freedom=0,
+            delta_time_freedom=0,
+            deap_verbose=True,
+            # evaluation=EvaluationGPHH.SGS,
+            # evaluation=EvaluationGPHH.PERMUTATION_DISTANCE,
+            # permutation_distance=PermutationDistance.KTD,
+            objectives=objectives,
+            objective_weights=objective_weights
+        )
+
+    @staticmethod
     def ms_default():
         set_feature = {FeatureEnum.EARLIEST_FINISH_DATE,
                        FeatureEnum.EARLIEST_START_DATE,
@@ -645,7 +694,7 @@ class ParametersGPHH:
             set_primitves=pset,
             tournament_ratio=0.1,
             pop_size=40,
-            n_gen=2,
+            n_gen=100,
             min_tree_depth=1,
             max_tree_depth=4,
             crossover_rate=0.7,
@@ -696,7 +745,7 @@ class ParametersGPHH:
         )
 
 
-class GPHH(Solver, DeterministicPolicies):
+class GPHH_Pareto(Solver, DeterministicPolicies):
     T_domain = D
 
     training_domains: List[T_domain]
@@ -782,15 +831,6 @@ class GPHH(Solver, DeterministicPolicies):
         mstats.register("min", np.min)
         mstats.register("max", np.max)
 
-        # pop = self.toolbox.population(n=pop_size)
-        # hof = tools.HallOfFame(1)
-        # self.hof = hof
-        # pop, log = algorithms.eaSimple(pop, self.toolbox, crossover_rate, mutation_rate, n_gen, stats=mstats,
-        #                                halloffame=hof, verbose=True)
-        #
-        # self.best_heuristic = hof[0]
-        # print('best_heuristic: ', self.best_heuristic)
-
         #  Define the statistics to collect at each generation
         stats = tools.Statistics(lambda ind: ind.fitness.values)
         stats.register("avg", np.mean, axis=0)
@@ -831,8 +871,6 @@ class GPHH(Solver, DeterministicPolicies):
             logbook.record(gen=gen, evals=len(invalid_ind), **record)
             print(logbook.stream)
 
-
-
         self.final_pop = []
         self.final_pop_individual_dict = {}
         for s in pop:
@@ -840,10 +878,9 @@ class GPHH(Solver, DeterministicPolicies):
             self.final_pop.append((str(s), TupleFitness(np.array(fits), len(fits))))
             self.final_pop_individual_dict[str(s)] = s
 
-        print('final_pop: ')
-
-        for s in self.final_pop:
-            print('\t', s[0], s[1].vector_fitness)
+        # print('final_pop: ')
+        # for s in self.final_pop:
+        #     print('\t', s[0], s[1].vector_fitness)
 
         rs = ResultStorage(list_solution_fits=self.final_pop,
                            best_solution=None,
@@ -851,19 +888,10 @@ class GPHH(Solver, DeterministicPolicies):
 
         pf = result_storage_to_pareto_front(rs)
 
-        print('pf_sol: ')
-        for s in pf.list_solution_fits:
-            print('\t', s[0], s[1].vector_fitness, self.final_pop_individual_dict[s[0]], type(self.final_pop_individual_dict[s[0]]))
+        # print('pf_sol: ')
+        # for s in pf.list_solution_fits:
+        #     print('\t', s[0], s[1].vector_fitness, self.final_pop_individual_dict[s[0]], type(self.final_pop_individual_dict[s[0]]))
 
-        # print('rs: ', rs)
-        # plot_storage_2d(rs, ["0", "1"])
-        # plt.show()
-        # plot_pareto_2d(pf, ["0", "1"])
-        # plt.show()
-        # print('pf: ', pf)
-
-        # self.best_heuristic = sorted(self.final_pop, key=lambda x: x[1].vector_fitness[0])[0]
-        # self.best_heuristic = self.final_pop[0][0]
         self.best_heuristic = pf.get_best_solution()
         print('best_heuristic: ', self.best_heuristic)
 
@@ -906,7 +934,6 @@ class GPHH(Solver, DeterministicPolicies):
         func_heuristic = self.toolbox.compile(expr=individual)
         for domain in domains:
 
-            ###
             initial_state = domain.get_initial_state()
 
             do_model = build_do_domain(domain)
@@ -933,7 +960,6 @@ class GPHH(Solver, DeterministicPolicies):
                                                        reverse=False)]
             normalized_values_for_do = [normalized_values[i] - 2 for i in range(len(normalized_values)) if
                                         normalized_values[i] not in {1, len(normalized_values)}]
-            # if isinstance(domain, MSRCPSP):
             if not isinstance(self.domain, WithoutResourceSkills):
                 solution = MS_RCPSPSolution_Variant(problem=do_model,
                                                     priority_list_task=normalized_values_for_do,
@@ -944,7 +970,6 @@ class GPHH(Solver, DeterministicPolicies):
                 last_activity = max(list(solution.schedule.keys()))
                 do_makespan = solution.schedule[last_activity]['end_time']
 
-            # elif isinstance(domain, MRCPSP):
             if isinstance(self.domain, WithoutResourceSkills):
                 solution = RCPSPSolution(problem=do_model,
                                          rcpsp_permutation=normalized_values_for_do,
@@ -996,7 +1021,6 @@ class GPHH(Solver, DeterministicPolicies):
             self.cpm_data[domain] = {'cpm': cpm,
                                      'cpm_esd': cpm_esd}
 
-
     def test_features(self, domain, task_id, observation):
         for f in FeatureEnum:
             print('feature: ', f)
@@ -1028,12 +1052,9 @@ class GPHHPolicy(DeterministicPolicies):
 
     def _get_next_action(self, observation: D.T_agent[D.T_observation]) -> D.T_agent[D.T_concurrency[D.T_event]]:
         run_sgs = True
-        cheat_mode = False
-
 
         do_model = build_do_domain(self.domain_model)
         do_model.successors = self.domain.get_successors()
-        # print('DO: ', self.domain.get_resource_types_names())
         do_model.resources_list = self.domain.get_resource_types_names()
         do_model.resources_set = set(do_model.resources_list)
         do_model.resources = {r: self.domain.get_fixed_quantity_resource(r)
@@ -1046,7 +1067,6 @@ class GPHHPolicy(DeterministicPolicies):
             employees_dict = {}
             employees = self.domain.get_resource_units_names()
             sorted_employees = sorted(employees)
-            # print(sorted_employees)
             for employee, i in zip(sorted_employees, range(len(sorted_employees))):
                 skills = self.domain.get_skills_of_resource(resource=employee)
                 skills_details = {r: SkillDetail(skill_value=skills[r],
@@ -1067,7 +1087,6 @@ class GPHHPolicy(DeterministicPolicies):
             do_model.sink_task = max(self.domain.get_tasks_ids())
             do_model.source_task = min(self.domain.get_tasks_ids())
 
-        # TODO: Need to make sure do_domain is defined in a coherent way (i.e. all info from execution domain except uncertain information only)
         modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
         modes = modes[1:-1]
 
@@ -1080,19 +1099,6 @@ class GPHHPolicy(DeterministicPolicies):
                 if j in observation.tasks_ongoing:
                     scheduled_tasks_start_times[j] = observation.tasks_details[j].start
                     do_model.mode_details[j][1]['duration'] = observation.tasks_details[j].sampled_duration
-
-        # do_model = build_do_domain(self.domain)
-        # modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
-        # modes = modes[1:-1]
-        #
-        # if run_sgs:
-        #     scheduled_tasks_start_times = {}
-        #     for j in observation.tasks_details.keys():
-        #         if observation.tasks_details[j].start is not None:
-        #             scheduled_tasks_start_times[j] = observation.tasks_details[j].start
-        #         else:
-        #             if not cheat_mode:
-        #                 do_model.mode_details[j][1]['duration'] = self.domain_model.sample_task_duration(j, 1, 0.)
 
         if self.recompute_cpm:
             cpm, cpm_esd = compute_cpm(do_model)
@@ -1109,13 +1115,7 @@ class GPHHPolicy(DeterministicPolicies):
                                                        task_id=task_id,
                                                        state=observation)
                               for lf in self.list_feature]
-            # print('------', task_id, '------')
-            # for lf in self.list_feature:
-            #     print('lf: ', lf, ' ::  ', feature_function_map[lf](domain=self.domain,
-            #                                            cpm = cpm,
-            #                                             cpm_esd=cpm_esd,
-            #                                            task_id=task_id,
-            #                                            state=observation))
+
             output_value = self.func_heuristic(*input_features)
             raw_values.append(output_value)
 
@@ -1124,21 +1124,14 @@ class GPHHPolicy(DeterministicPolicies):
         normalized_values_for_do = [normalized_values[i] - 2 for i in range(len(normalized_values)) if
                                     normalized_values[i] not in {1, len(normalized_values)}]
 
-
-        # print(t, ': ', normalized_values)
-        # print('normalized_values_for_do: ', normalized_values_for_do)
-
         modes_dictionnary = {}
         for i in range(len(normalized_values)):
             modes_dictionnary[i+1] = 1
 
         if run_sgs:
-            # if isinstance(self.domain, MSRCPSP):
             if not isinstance(self.domain, WithoutResourceSkills):
-                # print('self.domain.: ', self.domain.get_resource_units_names())
                 priority_worker_per_task = [[w for w in self.domain.get_resource_units_names()]
                                             for i in range(len(self.domain.get_tasks_ids())-2)]
-                # print('normalized_values_for_do: ', normalized_values_for_do)
 
                 solution = MS_RCPSPSolution_Variant(problem=do_model,
                                                     priority_list_task=normalized_values_for_do,
@@ -1196,149 +1189,6 @@ class GPHHPolicy(DeterministicPolicies):
                                  # resource_allocation_priority = resource_allocation_priority
                                  )
         action: SchedulingAction = sgs_policy.sample_action(observation)
-        # print('action_2: ', action.action)
-        return action
-
-    def _is_policy_defined_for(self, observation: D.T_agent[D.T_observation]) -> bool:
-        return True
-
-
-class PoolAggregationMethod(Enum):
-    MEAN  = "mean"
-    MEDIAN = "median"
-    RANDOM = "random"
-
-
-class PooledGPHHPolicy(DeterministicPolicies):
-
-    def __init__(self, domain: SchedulingDomain, domain_model: SchedulingDomain, func_heuristics, pool_aggregation_method: PoolAggregationMethod = PoolAggregationMethod.MEAN, remove_extremes_values:int = 0, features: List[FeatureEnum]=None, params_gphh=None):
-        self.domain = domain
-        self.domain_model = domain_model
-        self.func_heuristics = func_heuristics
-        self.list_feature = features
-        self.params_gphh = params_gphh
-        self.pool_aggregation_method = pool_aggregation_method
-        self.remove_extremes_values = remove_extremes_values
-
-    def reset(self):
-        pass
-
-    def _get_next_action(self, observation: D.T_agent[D.T_observation]) -> D.T_agent[D.T_concurrency[D.T_event]]:
-
-        run_sgs = True
-        cheat_mode = False
-        regenerate_cpm = True
-
-        do_model = build_do_domain(self.domain_model)
-        modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
-        modes = modes[1:-1]
-
-        if run_sgs:
-            scheduled_tasks_start_times = {}
-            for j in observation.tasks_details.keys():
-                if observation.tasks_details[j].start is not None:
-                    scheduled_tasks_start_times[j] = observation.tasks_details[j].start
-                    do_model.mode_details[j][1]['duration'] = observation.tasks_details[j].sampled_duration
-
-        # do_model = build_do_domain(self.domain)
-        # modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
-        # modes = modes[1:-1]
-        #
-        # if run_sgs:
-        #     scheduled_tasks_start_times = {}
-        #     for j in observation.tasks_details.keys():
-        #         # schedule[j] = {}
-        #         if observation.tasks_details[j].start is not None:
-        #             # schedule[j]["start_time"] = observation.tasks_details[j].start
-        #             scheduled_tasks_start_times[j] = observation.tasks_details[j].start
-        #         # if observation.tasks_details[j].end is not None:
-        #         #     schedule[j]["end_time"] = observation.tasks_details[j].end
-        #         else:
-        #             if not cheat_mode:
-        #                 do_model.mode_details[j][1]['duration'] = self.domain_model.sample_task_duration(j, 1, 0.)
-
-        if regenerate_cpm:
-            cpm, cpm_esd = compute_cpm(do_model)
-
-        t = observation.t
-        raw_values = []
-        for task_id in self.domain.get_available_tasks(observation):
-            input_features = [feature_function_map[lf](
-                                                    domain=self.domain,
-                                                       cpm = cpm,
-                                                        cpm_esd=cpm_esd,
-                                                       task_id=task_id,
-                                                       state=observation)
-                              for lf in self.list_feature]
-            output_values = []
-            for f in self.func_heuristics:
-                output_value = f(*input_features)
-                output_values.append(output_value)
-
-            # print('output_values: ', output_values)
-            if self.remove_extremes_values > 0:
-                the_median = float(np.median(output_values))
-                tmp = {}
-                for i in range(len(output_values)):
-                    tmp[i] = abs(output_values[i] - the_median)
-                tmp = sorted(tmp.items(), key=lambda x: x[1], reverse=True)
-                to_remove = [tmp[i][0] for i in range(self.remove_extremes_values)]
-                output_values = list(np.delete(output_values, to_remove))
-
-            # print('output_values filtered: ', output_values)
-            if self.pool_aggregation_method == PoolAggregationMethod.MEAN:
-                agg_value = np.mean(output_values)
-            elif self.pool_aggregation_method == PoolAggregationMethod.MEDIAN:
-                agg_value = np.median(output_values)
-            elif self.pool_aggregation_method == PoolAggregationMethod.RANDOM:
-                index = random.randint(len(output_values))
-                agg_value = output_values[index]
-
-            # print('agg_value: ', agg_value)
-            raw_values.append(agg_value)
-
-        normalized_values = [x+1 for x in sorted(range(len(raw_values)), key=lambda k: raw_values[k],
-                                                 reverse=False)]
-        normalized_values_for_do = [normalized_values[i] - 2 for i in range(len(normalized_values)) if
-                                    normalized_values[i] not in {1, len(normalized_values)}]
-
-
-        # print('normalized_values: ', normalized_values)
-        # print('normalized_values_for_do: ', normalized_values_for_do)
-
-        modes_dictionnary = {}
-        for i in range(len(normalized_values)):
-            modes_dictionnary[i+1] = 1
-
-        if run_sgs:
-
-            solution = RCPSPSolution(problem=do_model,
-                                     rcpsp_permutation=normalized_values_for_do,
-                                     rcpsp_modes=modes,
-                                     )
-
-            solution.generate_schedule_from_permutation_serial_sgs_2(current_t=t,
-                                                                     completed_tasks=
-                                                                     {j: observation.tasks_details[j]
-                                                                      for j in observation.tasks_complete},
-                                                                     scheduled_tasks_start_times=scheduled_tasks_start_times)
-
-            schedule = solution.rcpsp_schedule
-        else:
-            schedule = None
-
-        sgs_policy = PolicyRCPSP(domain=self.domain,
-                                 schedule=schedule,
-                                 policy_method_params=PolicyMethodParams(
-                                     # base_policy_method=BasePolicyMethod.SGS_PRECEDENCE,
-                                     # base_policy_method=BasePolicyMethod.SGS_READY,
-                                     base_policy_method=self.params_gphh.base_policy_method,
-                                     delta_index_freedom=self.params_gphh.delta_index_freedom,
-                                     delta_time_freedom=self.params_gphh.delta_time_freedom),
-                                 permutation_task=normalized_values,
-                                 modes_dictionnary=modes_dictionnary)
-        action: SchedulingAction = sgs_policy.sample_action(observation)
-        # print('action_2: ', action.action)
         return action
 
     def _is_policy_defined_for(self, observation: D.T_agent[D.T_observation]) -> bool:
@@ -1358,11 +1208,9 @@ class FixedPermutationPolicy(DeterministicPolicies):
     def _get_next_action(self, observation: D.T_agent[D.T_observation]) -> D.T_agent[D.T_concurrency[D.T_event]]:
 
         run_sgs = True
-        cheat_mode = False
 
         do_model = build_do_domain(self.domain_model)
         do_model.successors = self.domain.get_successors()
-        # print('DO: ', self.domain.get_resource_types_names())
         do_model.resources_list = self.domain.get_resource_types_names()
         do_model.resources_set = set(do_model.resources_list)
         do_model.resources = {r: self.domain.get_fixed_quantity_resource(r)
@@ -1375,7 +1223,6 @@ class FixedPermutationPolicy(DeterministicPolicies):
             employees_dict = {}
             employees = self.domain.get_resource_units_names()
             sorted_employees = sorted(employees)
-            # print(sorted_employees)
             for employee, i in zip(sorted_employees, range(len(sorted_employees))):
                 skills = self.domain.get_skills_of_resource(resource=employee)
                 skills_details = {r: SkillDetail(skill_value=skills[r],
@@ -1397,7 +1244,6 @@ class FixedPermutationPolicy(DeterministicPolicies):
             do_model.sink_task = max(self.domain.get_tasks_ids())
             do_model.source_task = min(self.domain.get_tasks_ids())
 
-        # TODO: Need to make sure do_domain is defined in a coherent way (i.e. all info from execution domain except uncertain information only)
         modes = [observation.tasks_mode.get(j, 1) for j in sorted(self.domain.get_tasks_ids())]
         modes = modes[1:-1]
 
@@ -1416,42 +1262,16 @@ class FixedPermutationPolicy(DeterministicPolicies):
         normalized_values_for_do = [normalized_values[i] - 2 for i in range(len(normalized_values)) if
                                     normalized_values[i] not in {1, len(normalized_values)}]
 
-        # print('normalized_values: ', normalized_values)
-        # print('normalized_values_for_do: ', normalized_values_for_do)
         t = observation.t
-
-        # modes_dictionnary = {}
-        # for i in range(len(normalized_values)):
-        #     modes_dictionnary[i+1] = 1
-        #
-        # if run_sgs:
-        #
-        #     solution = RCPSPSolution(problem=do_model,
-        #                              rcpsp_permutation=normalized_values_for_do,
-        #                              rcpsp_modes=modes,
-        #                              )
-        #
-        #     solution.generate_schedule_from_permutation_serial_sgs_2(current_t=t,
-        #                                                              completed_tasks=
-        #                                                              {j: observation.tasks_details[j]
-        #                                                               for j in observation.tasks_complete},
-        #                                                              scheduled_tasks_start_times=scheduled_tasks_start_times)
-        #
-        #     schedule = solution.rcpsp_schedule
-        # else:
-        #     schedule = None
 
         modes_dictionnary = {}
         for i in range(len(normalized_values)):
             modes_dictionnary[i + 1] = 1
 
         if run_sgs:
-            # if isinstance(self.domain, MSRCPSP):
             if not isinstance(self.domain, WithoutResourceSkills):
-                # print('self.domain.: ', self.domain.get_resource_units_names())
                 priority_worker_per_task = [[w for w in self.domain.get_resource_units_names()]
                                             for i in range(len(self.domain.get_tasks_ids()) - 2)]
-                # print('normalized_values_for_do: ', normalized_values_for_do)
 
                 solution = MS_RCPSPSolution_Variant(problem=do_model,
                                                     priority_list_task=normalized_values_for_do,
@@ -1460,20 +1280,11 @@ class FixedPermutationPolicy(DeterministicPolicies):
                                                     )
 
                 finished = observation.tasks_complete
-                # finished = set(
-                #     [tt for tt in solution.schedule if solution.schedule[tt]["end_time"] <= t])
-                # completed = {tt: TaskDetails(solution.schedule[tt]["start_time"],
-                #                              solution.schedule[tt]["end_time"],
-                #                              resource_units_used=list(solution.employee_usage.get(tt, {}).keys()))
-                #              for tt in finished}
+
                 completed = {tt: TaskDetails(observation.tasks_details[tt].start,
                                              observation.tasks_details[tt].end,
                                              resource_units_used=list(observation.tasks_details[tt].resources.keys()))
                              for tt in finished}
-                # ongoing = {tt: TaskDetails(solution.schedule[tt]["start_time"],
-                #                            solution.schedule[tt]["end_time"],
-                #                            resource_units_used=list(solution.employee_usage.get(tt, {}).keys()))
-                #            for tt in observation.tasks_ongoing}
 
                 ongoing = {tt: TaskDetails(observation.tasks_details[tt].start,
                                            observation.tasks_details[tt].start + observation.tasks_details[tt].sampled_duration,
@@ -1485,10 +1296,7 @@ class FixedPermutationPolicy(DeterministicPolicies):
                                          scheduled_tasks_start_times=ongoing)
                 schedule = solution.schedule
                 resource_allocation = solution.employee_usage
-                # resource_allocation_priority = {j + 2: solution.priority_worker_per_task[j] for j in
-                #                                 range(len(solution.priority_worker_per_task))}
 
-            # elif isinstance(self.domain, MRCPSP):
             elif isinstance(self.domain, WithoutResourceSkills):
                 solution = RCPSPSolution(problem=do_model,
                                          rcpsp_permutation=normalized_values_for_do,
@@ -1501,30 +1309,9 @@ class FixedPermutationPolicy(DeterministicPolicies):
                                                                          scheduled_tasks_start_times=scheduled_tasks_start_times)
                 schedule = solution.rcpsp_schedule
                 resource_allocation = None
-                # resource_allocation_priority = None
-
-            # solution = RCPSPSolution(problem=do_model,
-            #                          rcpsp_permutation=normalized_values_for_do,
-            #                          rcpsp_modes=modes,
-            #                          )
-
-
-
 
         else:
             schedule = None
-
-        # sgs_policy = PolicyRCPSP(domain=self.domain,
-        #                          schedule=schedule,
-        #                          policy_method_params=PolicyMethodParams(
-        #                              # base_policy_method=BasePolicyMethod.SGS_PRECEDENCE,
-        #                              # base_policy_method=BasePolicyMethod.SGS_READY,
-        #                              base_policy_method=BasePolicyMethod.FOLLOW_GANTT,
-        #                              # delta_index_freedom=self.params_gphh.delta_index_freedom,
-        #                              # delta_time_freedom=self.params_gphh.delta_time_freedom
-        #                          ),
-        #                          permutation_task=normalized_values,
-        #                          modes_dictionnary=modes_dictionnary)
 
         sgs_policy = PolicyRCPSP(domain=self.domain,
                                  schedule=schedule,
@@ -1535,7 +1322,6 @@ class FixedPermutationPolicy(DeterministicPolicies):
                                  resource_allocation=resource_allocation
                                  )
         action: SchedulingAction = sgs_policy.sample_action(observation)
-        # print('action_2: ', action.action)
         return action
 
     def _is_policy_defined_for(self, observation: D.T_agent[D.T_observation]) -> bool:

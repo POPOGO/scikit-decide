@@ -3,9 +3,9 @@ from skdecide.hub.domain.rcpsp.rcpsp_sk_parser import load_domain
 from skdecide.hub.domain.rcpsp.rcpsp_sk import RCPSP
 from skdecide.hub.solver.do_solver.do_solver_scheduling import DOSolver, SolvingMethod
 from skdecide.hub.solver.sgs_policies.sgs_policies import PolicyMethodParams, BasePolicyMethod
-from skdecide.hub.solver.gphh.gphh_po import GPHH, feature_average_resource_requirements, \
+from skdecide.hub.solver.gphh.gphh_po import GPHH_Pareto, feature_average_resource_requirements, \
     feature_n_predecessors, feature_n_successors, feature_task_duration, \
-    feature_total_n_res, FeatureEnum, ParametersGPHH, protected_div, max_operator, min_operator, PrimitiveSet, GPHHPolicy, PooledGPHHPolicy, PoolAggregationMethod
+    feature_total_n_res, FeatureEnum, ParametersGPHH, protected_div, max_operator, min_operator, PrimitiveSet, GPHHPolicy
 import operator
 import numpy as np
 import json
@@ -42,7 +42,7 @@ def run_gphh():
 
         # start = time.time()
 
-        solver = GPHH(training_domains=training_domains,
+        solver = GPHH_Pareto(training_domains=training_domains,
                       domain_model=training_domains[0],
                       weight=-1,
                       verbose=True,

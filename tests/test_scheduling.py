@@ -35,7 +35,7 @@ from skdecide.hub.solver.lazy_astar import lazy_astar
 from skdecide.hub.solver.do_solver.do_solver_scheduling import PolicyRCPSP, DOSolver, \
     PolicyMethodParams, BasePolicyMethod, SolvingMethod
 from skdecide.hub.solver.lazy_astar import LazyAstar
-from skdecide.hub.solver.gphh.gphh_po import GPHH, ParametersGPHH
+from skdecide.hub.solver.gphh.gphh_po import GPHH_Pareto, ParametersGPHH
 from skdecide.hub.domain.rcpsp.rcpsp_sk import build_stochastic_from_deterministic_ms, build_n_determinist_from_stochastic_ms, SMSRCPSP
 
 optimal_solutions = {
@@ -864,7 +864,7 @@ def test_sgs_policies(domain):
     state = domain.get_initial_state()
 
     # Using a stochastic domain as reference + executing on stochastic domain
-    solver = GPHH(training_domains=training_domains,
+    solver = GPHH_Pareto(training_domains=training_domains,
                   domain_model=domain,
                   weight=-1,
                   verbose=True,
@@ -884,7 +884,7 @@ def test_sgs_policies(domain):
     check_rollout_consistency(domain, states)
 
     # Using a deterministic domain as reference + executing on deterministic domain
-    solver = GPHH(training_domains=training_domains,
+    solver = GPHH_Pareto(training_domains=training_domains,
                   domain_model=training_domains[0],
                   weight=-1,
                   verbose=True,
@@ -907,7 +907,7 @@ def test_sgs_policies(domain):
     deterministic_domains = build_n_determinist_from_stochastic(domain,
                                                                 nb_instance=3)
     training_domains = deterministic_domains
-    solver = GPHH(training_domains=training_domains[1:2],
+    solver = GPHH_Pareto(training_domains=training_domains[1:2],
                   domain_model=training_domains[1],
                   weight=-1,
                   verbose=True,
@@ -989,12 +989,12 @@ def test_gphh_ms(domain):
     training_domains_gphh = deterministic_domains
     training_domains_gphh_names = ['']
 
-    solver = GPHH(training_domains=training_domains_gphh,
+    solver = GPHH_Pareto(training_domains=training_domains_gphh,
                   domain_model=training_domains_gphh[0],
                   weight=-1,
                   verbose=True,
                   reference_permutations={},
-                  params_gphh=ParametersGPHH.ms_default(),
+                  params_gphh=ParametersGPHH.ms_fast(),
                   training_domains_names=training_domains_gphh_names
                   )
 
